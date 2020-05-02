@@ -144,21 +144,27 @@ class member_str(member):
 		self.ref_end = end
 
 	@property
-	def val(self):
-		# Offset start and end of the binary string
-		of_s = getattr(self.ins, self.ref_start).val
-		of_e = getattr(self.ins, self.ref_end).val
+	def of_s(self):
+		if isinstance(self.ref_start, int):
+			return self.ref_start
+		else:
+			return getattr(self.ins, self.ref_start).val
+	@property
+	def of_e(self):
+		if isinstance(self.ref_end, int):
+			return self.ref_end
+		else:
+			return getattr(self.ins, self.ref_end).val
 
-		s = slice(of_s, of_e)
+	@property
+	def val(self):
+		s = slice(self.of_s, self.of_e)
 
 		return self.ins.fw[offslice(s, self.ins.offset)].decode('utf8')
 
 	@val.setter
 	def val(self, val):
-		# Offset start and end of the binary string
-		of_s = getattr(self.ins, self.ref_start).val
-		of_e = getattr(self.ins, self.ref_end).val
-		ln = of_e - of_s
+		ln = self.of_e - self.of_s
 
 		# Convert to binary if not yet
 		if isinstance(val, str):
@@ -173,7 +179,7 @@ class member_str(member):
 			raise ValueError("String is %d long, space is for %d" % (len(dat), ln))
 
 		# Copy string
-		s = slice(of_s, of_e)
+		s = slice(self.of_s, self.of_e)
 		self.ins.fw[offslice(s, self.ins.offset)] = dat
 
 class member_jumptable(member):

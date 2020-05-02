@@ -55,6 +55,11 @@ class f(metaclass=bstruct.bstructmeta):
 
 		return ret
 
+class g(metaclass=bstruct.bstructmeta):
+	dat = {
+		'magic': bstruct.member_str(0,8),
+	}
+
 class SimpleTests(unittest.TestCase):
 	def test_1byte_a(self):
 		ba = bytearray(b'\0'*20)
@@ -233,8 +238,23 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(x.comment.val, "hello")
 		self.assertEqual(ba.hex(), '00000000000a000f0000000000000068656c6c6f')
 
+	def test_str_c(self):
+		ba = bytearray(b'\0'*20)
 
-	def test_names_a(self):
+		x = g(ba, 5)
+
+		self.assertEqual(len(x.magic.val), 8)
+		self.assertEqual(x.magic.val, "\0"*8)
+
+		x.magic.val = "fourfive"
+
+		self.assertEqual(len(x.magic.val), 8)
+		self.assertEqual(x.magic.val, "fourfive")
+		self.assertEqual(ba.hex(), "0000000000666f75726669766500000000000000")
+
+
+
+	def test_names_b(self):
 		names = ['michael', 'Montgomery']
 
 		ba = bytearray(b'\0'*50)
