@@ -428,6 +428,24 @@ class bstructmeta(type):
 				self.offset = offset
 			dct['__init__'] = _init
 
+		if 'condition_on' not in dct and 'conditional' in dct:
+			def _condition_on(self, mname):
+				cd = dct['conditional']
+				if mname in cd:
+					val = getattr(self, mname).val
+					if val in dct['conditional'][mname]:
+						subcls = dct['conditional'][mname][val]
+						return subcls(self.fw, self.offset)
+					else:
+						raise ValueError("Conditional on member '%s' has value '%s' that is not in the conditional list" % (mname,val))
+				else:
+					raise KeyError("No conditional for member '%s'" % (mname,))
+
+			dct['condition_on'] = _condition_on
+
+		if 'dat' not in dct:
+			raise TypeError("Class '%s' does not have a 'dat' item listing members" % (str(cls),))
+
 		# Iterate over struct members and create properties
 		for k,v in dct['dat'].items():
 			dct[k] = bstructmeta.fancyprop(v)

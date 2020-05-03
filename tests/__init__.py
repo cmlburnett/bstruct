@@ -70,6 +70,32 @@ class i(metaclass=bstruct.bstructmeta):
 		'recs': bstruct.member_binary_record(0, 5),
 	}
 
+class ja(metaclass=bstruct.bstructmeta):
+	dat = {
+		'type': bstruct.member_1(0),
+		'a': bstruct.member_1(1),
+		'b': bstruct.member_1(2),
+		'c': bstruct.member_1(3),
+		'd': bstruct.member_1(4),
+	}
+class jb(metaclass=bstruct.bstructmeta):
+	dat = {
+		'type': bstruct.member_1(0),
+		'a': bstruct.member_2(1),
+		'b': bstruct.member_2(3),
+	}
+class j(metaclass=bstruct.bstructmeta):
+	dat = {
+		'type': bstruct.member_1(0),
+		'data': bstruct.member_binary(1),
+	}
+	conditional = {
+		'type': {
+			ord('A'): ja,
+			ord('B'): jb,
+		}
+	}
+
 class SimpleTests(unittest.TestCase):
 	def test_1byte_a(self):
 		ba = bytearray(b'\0'*20)
@@ -360,4 +386,46 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(x.recs[0:4], ('ascii'.encode('ascii'), 'world'.encode('ascii'), 'hello'.encode('ascii'), 'flour'.encode('ascii')))
 
 		self.assertEqual(ba.hex(), '000000000000000000006173636969776f726c6468656c6c6f666c6f75720000000000000000000000000000000000000000')
+
+
+	def test_cond_a(self):
+		ba = bytearray(b'\0'*20)
+		ba[10] = ord('A')
+		ba[11] = 0x23
+		ba[12] = 0x34
+		ba[13] = 0x45
+		ba[14] = 0x56
+
+		x = j(ba, 10)
+		self.assertEqual(x.type.val, ord('A'))
+		self.assertEqual(type(x), j)
+
+		xx = x.condition_on('type')
+		self.assertEqual(type(xx), ja)
+		self.assertEqual(xx.type.val, ord('A'))
+		self.assertEqual(xx.a.val, 0x23)
+		self.assertEqual(xx.b.val, 0x34)
+		self.assertEqual(xx.c.val, 0x45)
+		self.assertEqual(xx.d.val, 0x56)
+
+		self.assertEqual(x.type.val, ord('A'))
+		self.assertEqual(type(x), j)
+		self.assertEqual(x.data[0:4], b'\x23\x34\x45\x56')
+
+		self.assertEqual(ba.hex(), '0000000000000000000041233445560000000000')
+
+
+
+		x.type.val = ord('B')
+		xx = x.condition_on('type')
+		self.assertEqual(type(xx), jb)
+		self.assertEqual(xx.type.val, ord('B'))
+		self.assertEqual(xx.a.val, 0x3423)
+		self.assertEqual(xx.b.val, 0x5645)
+
+		self.assertEqual(x.type.val, ord('B'))
+		self.assertEqual(type(x), j)
+		self.assertEqual(x.data[0:4], b'\x23\x34\x45\x56')
+
+		self.assertEqual(ba.hex(), '0000000000000000000042233445560000000000')
 
