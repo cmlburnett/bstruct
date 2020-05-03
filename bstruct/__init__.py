@@ -35,6 +35,27 @@ Index with where struct members are found:
 
 Note that 42 = 0x0000002A in little endian is 2a000000
 and that 2346298 = 0x000000000023CD3A in little endian is 3acd230000000000
+
+Member types:
+	member_1				1-byte integer
+	member_2				2-byte integer
+	member_4				4-byte integer
+	member_8				8-byte integer
+	member_binary			Arbitrary binary data access as list index [] access
+	member_binary_record	Arbitrary data access in blocks of binary blobs as "records"
+	member_ref				Same as a 2-byte integer, but interpreted as a byte index indirect reference
+	member_jumptable		Jump table list of 2-tuple of (start,end) byte indices
+	member_list				List of structs with (start,end) boundaries in jumptable
+
+To use, struct class should use metaclass bstructmeta.
+This defines __init__ method, if not present in the struct class.
+The class should define a dat dictionary that maps member names to member_* instances.
+The metaclass generates properties for each of these members that directly accesses binary data.
+
+Optionally, a conditional dictionary can be defined to map member values to sub-struct type that "remaps" the struct to interpret the binary data differently.
+This permits a union of different structs over the same data.
+No one type is "correct" and both can actively be used to read/write the data.
+At this time, conditional values must be fixed values.
 """
 
 import struct
@@ -428,8 +449,10 @@ class bstructmeta(type):
 				self.offset = offset
 			dct['__init__'] = _init
 
+		# If a conditional dictionary exists and a condition_on function is not defined, then define one
 		if 'condition_on' not in dct and 'conditional' in dct:
 			def _condition_on(self, mname):
+				# Get dictionary that maps member names to values
 				cd = dct['conditional']
 				if mname in cd:
 					val = getattr(self, mname).val
