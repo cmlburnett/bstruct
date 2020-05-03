@@ -14,7 +14,7 @@ A class is declared using the metaclass "bstructmeta" and the class defines a di
 This creates a two-member struct that includs a 4-byte magic number and an 8-byte length number.
 Use of the metaclass creates all of the properties and back-end work to manipulate the binary data.
 
-	# Create a 20 byte null spacej
+	# Create a 20 byte null space
 	b = bytearray(b'\0'*20)
 	# Start struct at byte five
 	f = foo(b, 5)
@@ -34,3 +34,12 @@ Index with where struct members are found:
 
 Note that 42 = 0x0000002A in little endian is 2a000000
 and that 2346298 = 0x000000000023CD3A in little endian is 3acd230000000000
+
+
+### Unit Testing ###
+Some basic unit testing is included.
+
+	python setup.py test
+
+All should pass, of course.
+
