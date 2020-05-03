@@ -374,6 +374,8 @@ class member_list(member):
 		"""
 		if isinstance(idx, int):
 			pass
+		elif isinstance(idx, slice):
+			return [self[i] for i in range(idx.start, idx.stop)]
 		else:
 			raise TypeError("Must supply only an integer when setting")
 
