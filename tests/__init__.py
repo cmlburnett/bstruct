@@ -60,6 +60,16 @@ class g(metaclass=bstruct.bstructmeta):
 		'magic': bstruct.member_str(0,8),
 	}
 
+class h(metaclass=bstruct.bstructmeta):
+	dat = {
+		'raw': bstruct.member_binary(0),
+	}
+
+class i(metaclass=bstruct.bstructmeta):
+	dat = {
+		'recs': bstruct.member_binary_record(0, 5),
+	}
+
 class SimpleTests(unittest.TestCase):
 	def test_1byte_a(self):
 		ba = bytearray(b'\0'*20)
@@ -253,7 +263,6 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(ba.hex(), "0000000000666f75726669766500000000000000")
 
 
-
 	def test_names_b(self):
 		names = ['michael', 'Montgomery']
 
@@ -305,4 +314,50 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(x.names[1].comment.val, names[1])
 
 		self.assertEqual(ba.hex(), '0500020000080013001300210004000b006d69636861656c04000e004d6f6e74676f6d657279000000000000000000000000')
+
+
+	def test_binary_a(self):
+		ba = bytearray(b'\0'*50)
+
+		x = h(ba, 10)
+
+		self.assertEqual(x.raw[0], 0)
+		x.raw[0] = ord(b'\xfe')
+		self.assertEqual(x.raw[0], ord(b'\xfe'))
+
+		self.assertEqual(ba.hex(), '00000000000000000000fe000000000000000000000000000000000000000000000000000000000000000000000000000000')
+
+
+		self.assertEqual(x.raw[0:5], b'\xfe\0\0\0\0')
+		x.raw[0:5] = 'ascii'.encode('ascii')
+		self.assertEqual(x.raw[0:5], 'ascii'.encode('ascii'))
+
+		self.assertEqual(ba.hex(), '0000000000000000000061736369690000000000000000000000000000000000000000000000000000000000000000000000')
+
+	def test_binary_b(self):
+		ba = bytearray(b'\0'*50)
+
+		x = i(ba, 10)
+
+		self.assertEqual(x.recs.size, 5)
+
+		for _ in range(8):
+			self.assertEqual(x.recs[_], b'\0'*5)
+
+		x.recs[0] = 'ascii'.encode('ascii')
+		x.recs[1] = 'world'.encode('ascii')
+
+		self.assertEqual(x.recs[0], 'ascii'.encode('ascii'))
+		self.assertEqual(x.recs[1], 'world'.encode('ascii'))
+		self.assertEqual(x.recs[0:2], ('ascii'.encode('ascii'), 'world'.encode('ascii')))
+
+		self.assertEqual(ba.hex(), '000000000000000000006173636969776f726c64000000000000000000000000000000000000000000000000000000000000')
+
+
+		x.recs[2:4] = ('hello'.encode('ascii'), 'flour'.encode('ascii'))
+		self.assertEqual(x.recs[2], 'hello'.encode('ascii'))
+		self.assertEqual(x.recs[3], 'flour'.encode('ascii'))
+		self.assertEqual(x.recs[0:4], ('ascii'.encode('ascii'), 'world'.encode('ascii'), 'hello'.encode('ascii'), 'flour'.encode('ascii')))
+
+		self.assertEqual(ba.hex(), '000000000000000000006173636969776f726c6468656c6c6f666c6f75720000000000000000000000000000000000000000')
 

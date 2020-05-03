@@ -51,6 +51,82 @@ class member:
 	""" Base class for members just to have one """
 	pass
 
+class member_binary(member):
+	"""
+	Plain binary access of specified length
+	"""
+	def __init__(self, offset):
+		self._offset = offset
+
+	def __getitem__(self, idx):
+		if isinstance(idx, int):
+			o = self.ins.offset + self._offset + idx
+			return self.ins.fw[o]
+		elif isinstance(idx, slice):
+			return self.ins.fw[offslice(idx, self._offset + self.ins.offset)]
+		else:
+			raise NotImplementedError
+
+	def __setitem__(self, idx, val):
+		if isinstance(idx, int):
+			o = self.ins.offset + self._offset + idx
+			self.ins.fw[o] = val
+		elif isinstance(idx, slice):
+			self.ins.fw[offslice(idx, self._offset + self.ins.offset)] = val
+		else:
+			raise NotImplementedError
+
+
+class member_binary_record(member):
+	"""
+	Plain binary access with specified record size.
+	Access is by record index rather than bytes.
+	"""
+	def __init__(self, offset, size):
+		self._offset = offset
+		self._size = size
+
+	@property
+	def size(self): return self._size
+	@size.setter
+	def size(self, val): self._size = val
+
+	def __getitem__(self, idx):
+		if isinstance(idx, int):
+			if idx < 0:
+				raise ValueError('No end-bound on records so cannot use negative indices: %d' % idx)
+			s = slice(self.ins.offset + self._offset + self.size*idx, 0)
+			s = slice(s.start, s.start + self.size)
+			return self.ins.fw[s]
+		elif isinstance(idx, slice):
+			if idx.step is None:
+				return tuple([self[_] for _ in range(idx.start, idx.stop)])
+			else:
+				return tuple([self[_] for _ in range(idx.start, idx.stop, idx.step)])
+		else:
+			raise NotImplementedError
+
+	def __setitem__(self, idx, val):
+		if isinstance(idx, int):
+			if idx < 0:
+				raise ValueError('No end-bound on records so cannot use negative indices: %d' % idx)
+			s = slice(self.ins.offset + self._offset + self.size*idx, 0)
+			s = slice(s.start, s.start + self.size)
+			self.ins.fw[s] = val
+		elif isinstance(idx, slice):
+			if idx.step is None:
+				cnt = 0
+				for i in range(idx.start, idx.stop):
+					self[i] = val[cnt]
+					cnt += 1
+			else:
+				cnt = 0
+				for i in range(idx.start, idx.stop, idx.step):
+					self[i] = val[cnt]
+					cnt += 1
+		else:
+			raise NotImplementedError
+
 class member_struct(member):
 	"""
 	Basic member that uses struct library to ser/deser binary
@@ -60,7 +136,8 @@ class member_struct(member):
 		"""
 		Gets the value from binary as an integer
 		"""
-		return struct.unpack(self.structstr, self.ins.fw[self.abs_slice])[0]
+		ret = struct.unpack(self.structstr, self.ins.fw[self.abs_slice])[0]
+		return ret
 	@val.setter
 	def val(self, v):
 		"""
@@ -159,7 +236,6 @@ class member_str(member):
 	@property
 	def val(self):
 		s = slice(self.of_s, self.of_e)
-
 		return self.ins.fw[offslice(s, self.ins.offset)].decode('utf8')
 
 	@val.setter
