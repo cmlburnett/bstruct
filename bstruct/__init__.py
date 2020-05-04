@@ -454,9 +454,14 @@ class bstructmeta(type):
 			def _condition_on(self, mname):
 				# Get dictionary that maps member names to values
 				cd = dct['conditional']
+				# Member name needs to be in the dictionary
 				if mname in cd:
+					# Get the value in struct
 					val = getattr(self, mname).val
+					# Search for value in the dictionary
+					# TODO: expand ability here beyond fixed values
 					if val in dct['conditional'][mname]:
+						# Get sub-struct class and instantiate at same offset
 						subcls = dct['conditional'][mname][val]
 						return subcls(self.fw, self.offset)
 					else:
