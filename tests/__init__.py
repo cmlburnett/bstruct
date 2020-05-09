@@ -434,9 +434,9 @@ class intervalTests(unittest.TestCase):
 		bs = bstruct.interval(5,10)
 		self.assertEqual(bs.start, 5)
 		self.assertEqual(bs.stop, 10)
-		self.assertEqual(bs.len, 5)
-		self.assertEqual(bs.slice, slice(5,10))
-		self.assertEqual(list(bs), [5,6,7,8,9])
+		self.assertEqual(bs.len, 6)
+		self.assertEqual(bs.slice, slice(5,11))
+		self.assertEqual(list(bs), [5,6,7,8,9,10])
 
 		# Don't really care how hash works, but want to ensure hash(bs) succeeds
 		self.assertEqual(hash(bs), hash( (bs.start, bs.stop) ))
@@ -447,39 +447,42 @@ class intervalTests(unittest.TestCase):
 		self.assertTrue(7 in bs)
 		self.assertTrue(8 in bs)
 		self.assertTrue(9 in bs)
-		self.assertFalse(10 in bs)
+		self.assertTrue(10 in bs)
+		self.assertFalse(11 in bs)
 
 		self.assertEqual(bs[0], 5)
 		self.assertEqual(bs[1], 6)
 		self.assertEqual(bs[2], 7)
 		self.assertEqual(bs[3], 8)
 		self.assertEqual(bs[4], 9)
-		self.assertEqual(bs[-1], 9)
-		self.assertEqual(bs[-2], 8)
-		self.assertEqual(bs[-3], 7)
-		self.assertEqual(bs[-4], 6)
-		self.assertEqual(bs[-5], 5)
+		self.assertEqual(bs[5], 10)
+		self.assertEqual(bs[-1], 10)
+		self.assertEqual(bs[-2], 9)
+		self.assertEqual(bs[-3], 8)
+		self.assertEqual(bs[-4], 7)
+		self.assertEqual(bs[-5], 6)
+		self.assertEqual(bs[-6], 5)
 
-		# Check that bs[5] and bs[-6] raise exception and do bs[6] and bs[-7] for good measure
-		self.assertRaises(KeyError, bs.__getitem__, 5)
+		# Check that bs[6] and bs[-7] raise exception and do bs[7] and bs[-8] for good measure
 		self.assertRaises(KeyError, bs.__getitem__, 6)
-		self.assertRaises(KeyError, bs.__getitem__, -6)
+		self.assertRaises(KeyError, bs.__getitem__, 7)
 		self.assertRaises(KeyError, bs.__getitem__, -7)
+		self.assertRaises(KeyError, bs.__getitem__, -8)
 
 	def test_null(self):
 		bs = bstruct.interval(5,5)
 		self.assertEqual(bs.start, 5)
 		self.assertEqual(bs.stop, 5)
-		self.assertEqual(bs.len, 0)
-		self.assertEqual(bs.slice, slice(5,5))
-		self.assertEqual(list(bs), [])
+		self.assertEqual(bs.len, 1)
+		self.assertEqual(bs.slice, slice(5,6))
+		self.assertEqual(list(bs), [5])
 
 		bs = bstruct.interval(5,6)
 		self.assertEqual(bs.start, 5)
 		self.assertEqual(bs.stop, 6)
-		self.assertEqual(bs.len, 1)
-		self.assertEqual(bs.slice, slice(5,6))
-		self.assertEqual(list(bs), [5])
+		self.assertEqual(bs.len, 2)
+		self.assertEqual(bs.slice, slice(5,7))
+		self.assertEqual(list(bs), [5,6])
 
 		# Invalid values
 		self.assertRaises(TypeError, bstruct.interval, 0, "stop is string")
@@ -492,9 +495,9 @@ class intervalTests(unittest.TestCase):
 
 		self.assertEqual(bs.start, 15)
 		self.assertEqual(bs.stop, 20)
-		self.assertEqual(bs.len, 5)
-		self.assertEqual(bs.slice, slice(15,20))
-		self.assertEqual(list(bs), [15,16,17,18,19])
+		self.assertEqual(bs.len, 6)
+		self.assertEqual(bs.slice, slice(15,21))
+		self.assertEqual(list(bs), [15,16,17,18,19,20])
 
 		self.assertFalse(14 in bs)
 		self.assertTrue(15 in bs)
@@ -502,7 +505,8 @@ class intervalTests(unittest.TestCase):
 		self.assertTrue(17 in bs)
 		self.assertTrue(18 in bs)
 		self.assertTrue(19 in bs)
-		self.assertFalse(20 in bs)
+		self.assertTrue(20 in bs)
+		self.assertFalse(21 in bs)
 
 	def test_sub(self):
 		bs = bstruct.interval(25,30)
@@ -510,9 +514,9 @@ class intervalTests(unittest.TestCase):
 
 		self.assertEqual(bs.start, 15)
 		self.assertEqual(bs.stop, 20)
-		self.assertEqual(bs.len, 5)
-		self.assertEqual(bs.slice, slice(15,20))
-		self.assertEqual(list(bs), [15,16,17,18,19])
+		self.assertEqual(bs.len, 6)
+		self.assertEqual(bs.slice, slice(15,21))
+		self.assertEqual(list(bs), [15,16,17,18,19,20])
 
 		self.assertFalse(14 in bs)
 		self.assertTrue(15 in bs)
@@ -520,7 +524,8 @@ class intervalTests(unittest.TestCase):
 		self.assertTrue(17 in bs)
 		self.assertTrue(18 in bs)
 		self.assertTrue(19 in bs)
-		self.assertFalse(20 in bs)
+		self.assertTrue(20 in bs)
+		self.assertFalse(21 in bs)
 
 	def test_overlap(self):
 		a = bstruct.interval(15,20)
@@ -537,11 +542,13 @@ class intervalTests(unittest.TestCase):
 		# - encompass the entire range
 		# - overlap other ends
 		# - No overlap
+		self.assertFalse(a.overlaps( bstruct.interval(10,11)))
+		self.assertFalse(a.overlaps( bstruct.interval(10,12)))
 		self.assertFalse(a.overlaps( bstruct.interval(10,13)))
+		# stop value is in the iterated range
+		# so interval(15,20) and interval(10,14) are adjacent and NOT overlapping
 		self.assertFalse(a.overlaps( bstruct.interval(10,14)))
-		# stop value is not actually in the iterated range
-		# so interval(15,20) and interval(10,15) are adjacent and NOT overlapping
-		self.assertFalse(a.overlaps( bstruct.interval(10,15)))
+		self.assertTrue(a.overlaps( bstruct.interval(10,15)))
 		self.assertTrue(a.overlaps( bstruct.interval(10,16)))
 		self.assertTrue(a.overlaps( bstruct.interval(10,20)))
 		self.assertTrue(a.overlaps( bstruct.interval(10,30)))
@@ -554,11 +561,12 @@ class intervalTests(unittest.TestCase):
 		self.assertTrue(a.overlaps( bstruct.interval(17,30)))
 		self.assertTrue(a.overlaps( bstruct.interval(18,30)))
 		self.assertTrue(a.overlaps( bstruct.interval(19,30)))
+		self.assertTrue(a.overlaps( bstruct.interval(20,30)))
 		# stop value is not actually in the iterated range
-		# so interval(15,20) and interval(20,30) are adjacent and NOT overlapping
-		self.assertFalse(a.overlaps( bstruct.interval(20,30)))
+		# so interval(15,20) and interval(21,30) are adjacent and NOT overlapping
 		self.assertFalse(a.overlaps( bstruct.interval(21,30)))
 		self.assertFalse(a.overlaps( bstruct.interval(22,30)))
+		self.assertFalse(a.overlaps( bstruct.interval(23,30)))
 
 	def test_beforeafter(self):
 		a = bstruct.interval(15,20)
@@ -569,7 +577,7 @@ class intervalTests(unittest.TestCase):
 		self.assertEqual(a.start, 15)
 		self.assertEqual(a.stop, 20)
 		self.assertEqual(b.start, 10)
-		self.assertEqual(b.stop, 15)
+		self.assertEqual(b.stop, 14)
 		self.assertFalse(a.overlaps(b))
 		self.assertTrue(a.is_adjacent(b))
 
@@ -577,7 +585,7 @@ class intervalTests(unittest.TestCase):
 		# Ensure immutability on @a
 		self.assertEqual(a.start, 15)
 		self.assertEqual(a.stop, 20)
-		self.assertEqual(c.start, 20)
+		self.assertEqual(c.start, 21)
 		self.assertEqual(c.stop, 25)
 		self.assertFalse(a.overlaps(c))
 		self.assertTrue(a.is_adjacent(c))

@@ -3,6 +3,11 @@ class interval:
 	"""
 	Native slice() is a terminal class and cannot be inherited.
 	I want some more features, so this is a "better" slice.
+
+	Functions slighly different from ranges and slices where as the end is not included.
+	In an interval, the stop index is included in the range.
+	So in Python, foo[0:3] gets you indices 0, 1, and 2.
+	With interval, interval(0,3) gets you 0, 1, 2, and 3.
 	"""
 
 	def __init__(self, start, stop):
@@ -12,8 +17,8 @@ class interval:
 
 		self._start = start
 		self._stop = stop
-		self._len = stop - start
-		self._slice = slice(start, stop)
+		self._len = stop - start + 1
+		self._slice = slice(start, stop+1)
 
 	@property
 	def start(self): return self._start
@@ -35,12 +40,12 @@ class interval:
 		return self._len
 
 	def __contains__(self, i):
-		return self._start <= i and self._stop > i
+		return self._start <= i and self._stop >= i
 
 	def overlaps(self, slc):
 		if self._start in slc:
 			return True
-		if (self._stop-1) in slc:
+		if self._stop in slc:
 			return True
 		return False
 
@@ -48,26 +53,26 @@ class interval:
 		"""
 		Two are adjacent if one starts after the other stops without gaps.
 		"""
-		if self.stop == b.start:
+		if self.stop+1 == b.start:
 			return True
-		if b.stop == self.start:
+		if b.stop+1 == self.start:
 			return True
 
 		return False
 
 	def before(self, start):
-		"""Non-overlapping slice before this slice with new start point"""
-		return interval(start, self.start)
+		"""Non-overlapping interval before this with new start point"""
+		return interval(start, self.start-1)
 
 	def after(self, stop):
-		"""Non-overlapping slice after this slice with new stop point"""
-		return interval(self.stop, stop)
+		"""Non-overlapping interval after this with new stop point"""
+		return interval(self.stop+1, stop)
 
 	def expand_before(self, start):
-		"""Expand this slice to a new start point with same stop"""
+		"""Expand this interval to a new start point with same stop"""
 		return interval(start, self.stop)
 	def expand_after(self, stop):
-		"""Expand this slice to a new stop point with same start"""
+		"""Expand this interval to a new stop point with same start"""
 		return interval(self.start, stop)
 
 	def __getitem__(self, i):
@@ -80,10 +85,10 @@ class interval:
 			if i + self._len < 0:
 				raise KeyError("Index %d too large" % i)
 
-			return self._stop + i
+			return self._stop + 1 + i
 
 	def __iter__(self):
-		for i in range(self._start, self._stop):
+		for i in range(self._start, self._stop+1):
 			yield i
 
 	def __add__(self, b):
