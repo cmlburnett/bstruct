@@ -429,9 +429,9 @@ class SimpleTests(unittest.TestCase):
 
 		self.assertEqual(ba.hex(), '0000000000000000000042233445560000000000')
 
-class bettersliceTests(unittest.TestCase):
+class intervalTests(unittest.TestCase):
 	def test_basic(self):
-		bs = bstruct.betterslice(5,10)
+		bs = bstruct.interval(5,10)
 		self.assertEqual(bs.start, 5)
 		self.assertEqual(bs.stop, 10)
 		self.assertEqual(bs.len, 5)
@@ -467,14 +467,14 @@ class bettersliceTests(unittest.TestCase):
 		self.assertRaises(KeyError, bs.__getitem__, -7)
 
 	def test_null(self):
-		bs = bstruct.betterslice(5,5)
+		bs = bstruct.interval(5,5)
 		self.assertEqual(bs.start, 5)
 		self.assertEqual(bs.stop, 5)
 		self.assertEqual(bs.len, 0)
 		self.assertEqual(bs.slice, slice(5,5))
 		self.assertEqual(list(bs), [])
 
-		bs = bstruct.betterslice(5,6)
+		bs = bstruct.interval(5,6)
 		self.assertEqual(bs.start, 5)
 		self.assertEqual(bs.stop, 6)
 		self.assertEqual(bs.len, 1)
@@ -482,12 +482,12 @@ class bettersliceTests(unittest.TestCase):
 		self.assertEqual(list(bs), [5])
 
 		# Invalid values
-		self.assertRaises(TypeError, bstruct.betterslice, 0, "stop is string")
-		self.assertRaises(TypeError, bstruct.betterslice, "start is string", 0)
-		self.assertRaises(ValueError, bstruct.betterslice, 5, 4)
+		self.assertRaises(TypeError, bstruct.interval, 0, "stop is string")
+		self.assertRaises(TypeError, bstruct.interval, "start is string", 0)
+		self.assertRaises(ValueError, bstruct.interval, 5, 4)
 
 	def test_add(self):
-		bs = bstruct.betterslice(5,10)
+		bs = bstruct.interval(5,10)
 		bs = bs + 10
 
 		self.assertEqual(bs.start, 15)
@@ -505,7 +505,7 @@ class bettersliceTests(unittest.TestCase):
 		self.assertFalse(20 in bs)
 
 	def test_sub(self):
-		bs = bstruct.betterslice(25,30)
+		bs = bstruct.interval(25,30)
 		bs = bs - 10
 
 		self.assertEqual(bs.start, 15)
@@ -523,13 +523,13 @@ class bettersliceTests(unittest.TestCase):
 		self.assertFalse(20 in bs)
 
 	def test_overlap(self):
-		a = bstruct.betterslice(15,20)
+		a = bstruct.interval(15,20)
 
 		# Could do this will loops, but better to just hard code things so its clear
 
 		# Clearly not overlap
-		self.assertFalse(a.overlaps( bstruct.betterslice(0,5)))
-		self.assertFalse(a.overlaps( bstruct.betterslice(9,14)))
+		self.assertFalse(a.overlaps( bstruct.interval(0,5)))
+		self.assertFalse(a.overlaps( bstruct.interval(9,14)))
 
 		# Increment ranges to test each possibility
 		# - No overlap
@@ -537,31 +537,31 @@ class bettersliceTests(unittest.TestCase):
 		# - encompass the entire range
 		# - overlap other ends
 		# - No overlap
-		self.assertFalse(a.overlaps( bstruct.betterslice(10,13)))
-		self.assertFalse(a.overlaps( bstruct.betterslice(10,14)))
+		self.assertFalse(a.overlaps( bstruct.interval(10,13)))
+		self.assertFalse(a.overlaps( bstruct.interval(10,14)))
 		# stop value is not actually in the iterated range
-		# so betterslice(15,20) and betterslice(10,15) are adjacent and NOT overlapping
-		self.assertFalse(a.overlaps( bstruct.betterslice(10,15)))
-		self.assertTrue(a.overlaps( bstruct.betterslice(10,16)))
-		self.assertTrue(a.overlaps( bstruct.betterslice(10,20)))
-		self.assertTrue(a.overlaps( bstruct.betterslice(10,30)))
-		self.assertTrue(a.overlaps( bstruct.betterslice(11,30)))
-		self.assertTrue(a.overlaps( bstruct.betterslice(12,30)))
-		self.assertTrue(a.overlaps( bstruct.betterslice(13,30)))
-		self.assertTrue(a.overlaps( bstruct.betterslice(14,30)))
-		self.assertTrue(a.overlaps( bstruct.betterslice(15,30)))
-		self.assertTrue(a.overlaps( bstruct.betterslice(16,30)))
-		self.assertTrue(a.overlaps( bstruct.betterslice(17,30)))
-		self.assertTrue(a.overlaps( bstruct.betterslice(18,30)))
-		self.assertTrue(a.overlaps( bstruct.betterslice(19,30)))
+		# so interval(15,20) and interval(10,15) are adjacent and NOT overlapping
+		self.assertFalse(a.overlaps( bstruct.interval(10,15)))
+		self.assertTrue(a.overlaps( bstruct.interval(10,16)))
+		self.assertTrue(a.overlaps( bstruct.interval(10,20)))
+		self.assertTrue(a.overlaps( bstruct.interval(10,30)))
+		self.assertTrue(a.overlaps( bstruct.interval(11,30)))
+		self.assertTrue(a.overlaps( bstruct.interval(12,30)))
+		self.assertTrue(a.overlaps( bstruct.interval(13,30)))
+		self.assertTrue(a.overlaps( bstruct.interval(14,30)))
+		self.assertTrue(a.overlaps( bstruct.interval(15,30)))
+		self.assertTrue(a.overlaps( bstruct.interval(16,30)))
+		self.assertTrue(a.overlaps( bstruct.interval(17,30)))
+		self.assertTrue(a.overlaps( bstruct.interval(18,30)))
+		self.assertTrue(a.overlaps( bstruct.interval(19,30)))
 		# stop value is not actually in the iterated range
-		# so betterslice(15,20) and betterslice(20,30) are adjacent and NOT overlapping
-		self.assertFalse(a.overlaps( bstruct.betterslice(20,30)))
-		self.assertFalse(a.overlaps( bstruct.betterslice(21,30)))
-		self.assertFalse(a.overlaps( bstruct.betterslice(22,30)))
+		# so interval(15,20) and interval(20,30) are adjacent and NOT overlapping
+		self.assertFalse(a.overlaps( bstruct.interval(20,30)))
+		self.assertFalse(a.overlaps( bstruct.interval(21,30)))
+		self.assertFalse(a.overlaps( bstruct.interval(22,30)))
 
 	def test_beforeafter(self):
-		a = bstruct.betterslice(15,20)
+		a = bstruct.interval(15,20)
 
 		b = a.before(10)
 

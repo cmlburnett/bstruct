@@ -60,7 +60,7 @@ At this time, conditional values must be fixed values.
 
 import struct
 
-from .betterslice import betterslice
+from .betterslice import interval
 
 def offslice(s, offset):
 	"""

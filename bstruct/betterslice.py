@@ -1,5 +1,5 @@
 
-class betterslice:
+class interval:
 	"""
 	Native slice() is a terminal class and cannot be inherited.
 	I want some more features, so this is a "better" slice.
@@ -24,9 +24,9 @@ class betterslice:
 	@property
 	def slice(self): return self._slice
 
-	def str(self): return "<betterslice [%d,%d]>" % (self._start, self._stop)
+	def str(self): return "<interval [%d,%d]>" % (self._start, self._stop)
 	def __repr__(self):
-		return "betterslice(%d,%d)" % (self._start, self._stop)
+		return "interval(%d,%d)" % (self._start, self._stop)
 
 	def __hash__(self):
 		return hash( (self._start, self._stop) )
@@ -57,18 +57,18 @@ class betterslice:
 
 	def before(self, start):
 		"""Non-overlapping slice before this slice with new start point"""
-		return betterslice(start, self.start)
+		return interval(start, self.start)
 
 	def after(self, stop):
 		"""Non-overlapping slice after this slice with new stop point"""
-		return betterslice(self.stop, stop)
+		return interval(self.stop, stop)
 
 	def expand_before(self, start):
 		"""Expand this slice to a new start point with same stop"""
-		return betterslice(start, self.stop)
+		return interval(start, self.stop)
 	def expand_after(self, stop):
 		"""Expand this slice to a new stop point with same start"""
-		return betterslice(self.start, stop)
+		return interval(self.start, stop)
 
 	def __getitem__(self, i):
 		if i >= 0:
@@ -87,7 +87,7 @@ class betterslice:
 			yield i
 
 	def __add__(self, b):
-		return betterslice(self._start+b, self._stop+b)
+		return interval(self._start+b, self._stop+b)
 	def __sub__(self, b):
-		return betterslice(self._start-b, self._stop-b)
+		return interval(self._start-b, self._stop-b)
 
