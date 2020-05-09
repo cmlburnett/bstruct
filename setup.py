@@ -12,7 +12,7 @@ setup(
 	author_email = "cmlburnett@gmail.com",
 	url = "",
 	packages = ['bstruct'],
-	package_data = {'bstruct': ['bstruct/__init__.py']},
+	package_data = {'bstruct': ['bstruct/__init__.py', 'bstruct/betterslice.py']},
 	classifiers = [
 		'Programming Language :: Python :: 3.8'
 	],

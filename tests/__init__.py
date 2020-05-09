@@ -429,3 +429,134 @@ class SimpleTests(unittest.TestCase):
 
 		self.assertEqual(ba.hex(), '0000000000000000000042233445560000000000')
 
+class bettersliceTests(unittest.TestCase):
+	def test_basic(self):
+		bs = bstruct.betterslice(5,10)
+		self.assertEqual(bs.start, 5)
+		self.assertEqual(bs.stop, 10)
+		self.assertEqual(bs.len, 5)
+		self.assertEqual(bs.slice, slice(5,10))
+		self.assertEqual(list(bs), [5,6,7,8,9])
+
+		# Don't really care how hash works, but want to ensure hash(bs) succeeds
+		self.assertEqual(hash(bs), hash( (bs.start, bs.stop) ))
+
+		self.assertFalse(4 in bs)
+		self.assertTrue(5 in bs)
+		self.assertTrue(6 in bs)
+		self.assertTrue(7 in bs)
+		self.assertTrue(8 in bs)
+		self.assertTrue(9 in bs)
+		self.assertFalse(10 in bs)
+
+		self.assertEqual(bs[0], 5)
+		self.assertEqual(bs[1], 6)
+		self.assertEqual(bs[2], 7)
+		self.assertEqual(bs[3], 8)
+		self.assertEqual(bs[4], 9)
+		self.assertEqual(bs[-1], 9)
+		self.assertEqual(bs[-2], 8)
+		self.assertEqual(bs[-3], 7)
+		self.assertEqual(bs[-4], 6)
+		self.assertEqual(bs[-5], 5)
+
+		# Check that bs[5] and bs[-6] raise exception and do bs[6] and bs[-7] for good measure
+		self.assertRaises(KeyError, bs.__getitem__, 5)
+		self.assertRaises(KeyError, bs.__getitem__, 6)
+		self.assertRaises(KeyError, bs.__getitem__, -6)
+		self.assertRaises(KeyError, bs.__getitem__, -7)
+
+	def test_null(self):
+		bs = bstruct.betterslice(5,5)
+		self.assertEqual(bs.start, 5)
+		self.assertEqual(bs.stop, 5)
+		self.assertEqual(bs.len, 0)
+		self.assertEqual(bs.slice, slice(5,5))
+		self.assertEqual(list(bs), [])
+
+		bs = bstruct.betterslice(5,6)
+		self.assertEqual(bs.start, 5)
+		self.assertEqual(bs.stop, 6)
+		self.assertEqual(bs.len, 1)
+		self.assertEqual(bs.slice, slice(5,6))
+		self.assertEqual(list(bs), [5])
+
+		# Invalid values
+		self.assertRaises(TypeError, bstruct.betterslice, 0, "stop is string")
+		self.assertRaises(TypeError, bstruct.betterslice, "start is string", 0)
+		self.assertRaises(ValueError, bstruct.betterslice, 5, 4)
+
+	def test_add(self):
+		bs = bstruct.betterslice(5,10)
+		bs = bs + 10
+
+		self.assertEqual(bs.start, 15)
+		self.assertEqual(bs.stop, 20)
+		self.assertEqual(bs.len, 5)
+		self.assertEqual(bs.slice, slice(15,20))
+		self.assertEqual(list(bs), [15,16,17,18,19])
+
+		self.assertFalse(14 in bs)
+		self.assertTrue(15 in bs)
+		self.assertTrue(16 in bs)
+		self.assertTrue(17 in bs)
+		self.assertTrue(18 in bs)
+		self.assertTrue(19 in bs)
+		self.assertFalse(20 in bs)
+
+	def test_sub(self):
+		bs = bstruct.betterslice(25,30)
+		bs = bs - 10
+
+		self.assertEqual(bs.start, 15)
+		self.assertEqual(bs.stop, 20)
+		self.assertEqual(bs.len, 5)
+		self.assertEqual(bs.slice, slice(15,20))
+		self.assertEqual(list(bs), [15,16,17,18,19])
+
+		self.assertFalse(14 in bs)
+		self.assertTrue(15 in bs)
+		self.assertTrue(16 in bs)
+		self.assertTrue(17 in bs)
+		self.assertTrue(18 in bs)
+		self.assertTrue(19 in bs)
+		self.assertFalse(20 in bs)
+
+	def test_overlap(self):
+		a = bstruct.betterslice(15,20)
+
+		# Could do this will loops, but better to just hard code things so its clear
+
+		# Clearly not overlap
+		self.assertFalse(a.overlaps( bstruct.betterslice(0,5)))
+		self.assertFalse(a.overlaps( bstruct.betterslice(9,14)))
+
+		# Increment ranges to test each possibility
+		# - No overlap
+		# - overlap ends
+		# - encompass the entire range
+		# - overlap other ends
+		# - No overlap
+		self.assertFalse(a.overlaps( bstruct.betterslice(10,13)))
+		self.assertFalse(a.overlaps( bstruct.betterslice(10,14)))
+		# stop value is not actually in the iterated range
+		# so betterslice(15,20) and betterslice(10,15) are adjacent and NOT overlapping
+		self.assertFalse(a.overlaps( bstruct.betterslice(10,15)))
+		self.assertTrue(a.overlaps( bstruct.betterslice(10,16)))
+		self.assertTrue(a.overlaps( bstruct.betterslice(10,20)))
+		self.assertTrue(a.overlaps( bstruct.betterslice(10,30)))
+		self.assertTrue(a.overlaps( bstruct.betterslice(11,30)))
+		self.assertTrue(a.overlaps( bstruct.betterslice(12,30)))
+		self.assertTrue(a.overlaps( bstruct.betterslice(13,30)))
+		self.assertTrue(a.overlaps( bstruct.betterslice(14,30)))
+		self.assertTrue(a.overlaps( bstruct.betterslice(15,30)))
+		self.assertTrue(a.overlaps( bstruct.betterslice(16,30)))
+		self.assertTrue(a.overlaps( bstruct.betterslice(17,30)))
+		self.assertTrue(a.overlaps( bstruct.betterslice(18,30)))
+		self.assertTrue(a.overlaps( bstruct.betterslice(19,30)))
+		# stop value is not actually in the iterated range
+		# so betterslice(15,20) and betterslice(20,30) are adjacent and NOT overlapping
+		self.assertFalse(a.overlaps( bstruct.betterslice(20,30)))
+		self.assertFalse(a.overlaps( bstruct.betterslice(21,30)))
+		self.assertFalse(a.overlaps( bstruct.betterslice(22,30)))
+

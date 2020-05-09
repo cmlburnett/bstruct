@@ -60,6 +60,8 @@ At this time, conditional values must be fixed values.
 
 import struct
 
+from .betterslice import betterslice
+
 def offslice(s, offset):
 	"""
 	Cannot derive from slice(), so must make a function to add ability to shift slice offset
@@ -368,8 +370,15 @@ class member_jumptable(member):
 		if idx > ln:
 			raise IndexError('Access index %d beyond jump table length %d' % (idx,ln))
 
-		# Get offset start of the jump table
-		of = getattr(self.ins, self._offset_ref).val
+		if isinstance(self._offset_ref, int):
+			# Get offset start of the jump table
+			of = self._offset_ref
+		elif isinstance(self._offset_ref, str):
+			# Get offset start of the jump table
+			of = getattr(self.ins, self._offset_ref).val
+		else:
+			raise TypeError("Unknown type '%s'" % type(self._offset_ref))
+
 		# Make a slice object
 		s = slice(of + 4*idx, of + 4*idx + 4)
 		# Update the jump table entry with the offset @val
