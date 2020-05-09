@@ -560,3 +560,44 @@ class bettersliceTests(unittest.TestCase):
 		self.assertFalse(a.overlaps( bstruct.betterslice(21,30)))
 		self.assertFalse(a.overlaps( bstruct.betterslice(22,30)))
 
+	def test_beforeafter(self):
+		a = bstruct.betterslice(15,20)
+
+		b = a.before(10)
+
+		# Ensure immutability on @a
+		self.assertEqual(a.start, 15)
+		self.assertEqual(a.stop, 20)
+		self.assertEqual(b.start, 10)
+		self.assertEqual(b.stop, 15)
+		self.assertFalse(a.overlaps(b))
+		self.assertTrue(a.is_adjacent(b))
+
+		c = a.after(25)
+		# Ensure immutability on @a
+		self.assertEqual(a.start, 15)
+		self.assertEqual(a.stop, 20)
+		self.assertEqual(c.start, 20)
+		self.assertEqual(c.stop, 25)
+		self.assertFalse(a.overlaps(c))
+		self.assertTrue(a.is_adjacent(c))
+
+		d = a.expand_before(10)
+
+		# Ensure immutability on @a
+		self.assertEqual(a.start, 15)
+		self.assertEqual(a.stop, 20)
+		self.assertEqual(d.start, 10)
+		self.assertEqual(d.stop, 20)
+		self.assertTrue(a.overlaps(d))
+		self.assertFalse(a.is_adjacent(d))
+
+		e = a.expand_after(25)
+		# Ensure immutability on @a
+		self.assertEqual(a.start, 15)
+		self.assertEqual(a.stop, 20)
+		self.assertEqual(e.start, 15)
+		self.assertEqual(e.stop, 25)
+		self.assertTrue(a.overlaps(e))
+		self.assertFalse(a.is_adjacent(e))
+
