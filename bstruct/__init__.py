@@ -87,6 +87,8 @@ class member_binary(member):
 			return self.ins.fw[o]
 		elif isinstance(idx, slice):
 			return self.ins.fw[offslice(idx, self._offset + self.ins.offset)]
+		elif isinstance(idx, interval):
+			return self.ins.fw[ (idx+(self._offset+self.ins.offset)).slice ]
 		else:
 			raise NotImplementedError
 
@@ -96,6 +98,8 @@ class member_binary(member):
 			self.ins.fw[o] = val
 		elif isinstance(idx, slice):
 			self.ins.fw[offslice(idx, self._offset + self.ins.offset)] = val
+		elif isinstance(idx, interval):
+			self.ins.fw[ (idx+(self._offset+self.ins.offset)).slice ] = val
 		else:
 			raise NotImplementedError
 
@@ -126,6 +130,8 @@ class member_binary_record(member):
 				return tuple([self[_] for _ in range(idx.start, idx.stop)])
 			else:
 				return tuple([self[_] for _ in range(idx.start, idx.stop, idx.step)])
+		elif isinstance(idx, interval):
+			return self[idx.slice]
 		else:
 			raise NotImplementedError
 
@@ -147,6 +153,8 @@ class member_binary_record(member):
 				for i in range(idx.start, idx.stop, idx.step):
 					self[i] = val[cnt]
 					cnt += 1
+		elif isinstance(idx, interval):
+			self[idx.slice] = val
 		else:
 			raise NotImplementedError
 
@@ -187,14 +195,14 @@ class member_struct(member):
 		"""
 		Gets the index of this member as a slice
 		"""
-		return self._s
+		return self._interval.slice
 
 	@property
 	def abs_slice(self):
 		"""
 		Gets the absolute index of this member as a slice.
 		"""
-		return offslice(self._s, self.ins.offset)
+		return (self._interval + self.ins.offset).slice
 
 class member_1(member_struct):
 	""" One byte struct member """
@@ -202,7 +210,7 @@ class member_1(member_struct):
 		self.offset = offset
 		self.len = 1
 		self.structstr = "<B"
-		self._s = slice(self.offset, self.offset+self.len)
+		self._interval = interval(offset,offset + self.len-1)
 
 class member_2(member_struct):
 	""" Two byte struct member """
@@ -210,7 +218,7 @@ class member_2(member_struct):
 		self.offset = offset
 		self.len = 2
 		self.structstr = "<H"
-		self._s = slice(self.offset, self.offset+self.len)
+		self._interval = interval(offset,offset + self.len-1)
 
 class member_4(member_struct):
 	""" Four byte struct member """
@@ -218,7 +226,7 @@ class member_4(member_struct):
 		self.offset = offset
 		self.len = 4
 		self.structstr = "<I"
-		self._s = slice(self.offset, self.offset+self.len)
+		self._interval = interval(offset,offset + self.len-1)
 
 class member_8(member_struct):
 	""" Eight byte struct member """
@@ -226,7 +234,7 @@ class member_8(member_struct):
 		self.offset = offset
 		self.len = 8
 		self.structstr = "<Q"
-		self._s = slice(self.offset, self.offset+self.len)
+		self._interval = interval(offset,offset + self.len-1)
 
 class member_ref(member_2):
 	"""
@@ -335,9 +343,8 @@ class member_jumptable(member):
 			idx = indices
 			of = self.offset
 			# Make a slice object
-			s = slice(of + 4*idx, of + 4*idx + 4)
-			# Return the offset to jump to for the @idx entry
-			return struct.unpack("<HH", self.ins.fw[offslice(s, self.ins.offset)])
+			s = interval(of, of+4-1).shift(4*idx).shift(self.ins.offset).slice
+			return struct.unpack("<HH", self.ins.fw[s])
 		else:
 			ret = []
 
@@ -345,9 +352,9 @@ class member_jumptable(member):
 			of = self.offset
 			for idx in indices:
 				# Make a slice object
-				s = slice(of + 4*idx, of + 4*idx + 4)
+				s = interval(of, of+4-1).shift(4*idx).shift(self.ins.offset).slice
 				# Return the offset to jump to for the @idx entry
-				ret.append( struct.unpack("<HH", self.ins.fw[offslice(s, self.ins.offset)]) )
+				ret.append( struct.unpack("<HH", self.ins.fw[s]) )
 
 			return ret
 
@@ -380,9 +387,8 @@ class member_jumptable(member):
 			raise TypeError("Unknown type '%s'" % type(self._offset_ref))
 
 		# Make a slice object
-		s = slice(of + 4*idx, of + 4*idx + 4)
-		# Update the jump table entry with the offset @val
-		self.ins.fw[offslice(s, self.ins.offset)] = struct.pack("<HH", *val)
+		s = interval(of, of+4-1).shift(4*idx).shift(self.ins.offset).slice
+		self.ins.fw[s] = struct.pack("<HH", *val)
 
 
 class member_list(member):

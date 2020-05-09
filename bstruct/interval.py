@@ -75,6 +75,13 @@ class interval:
 		"""Expand this interval to a new stop point with same start"""
 		return interval(self.start, stop)
 
+	def shift(self, val):
+		"""
+		Shift the interval by adding/subtracting @val from the start and stop
+		Can be done using binary operators + and -, but this is done as a function call, which can be easier some times.
+		"""
+		return interval(self._start+val, self._stop+val)
+
 	def __getitem__(self, i):
 		if i >= 0:
 			if i >= self._len:
@@ -91,8 +98,8 @@ class interval:
 		for i in range(self._start, self._stop+1):
 			yield i
 
-	def __add__(self, b):
-		return interval(self._start+b, self._stop+b)
-	def __sub__(self, b):
-		return interval(self._start-b, self._stop-b)
+	def __add__(self, val):
+		return self.shift(val)
+	def __sub__(self, val):
+		return self.shift(-val)
 
