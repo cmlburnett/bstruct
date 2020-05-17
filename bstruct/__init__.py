@@ -328,6 +328,55 @@ class member_jumptable(member):
 		"""
 		return len(self) * 4
 
+	@property
+	def data_interval(self):
+		"""
+		Gets the interval of the entire data block
+		"""
+		if len(self) == 0:
+			return None
+		else:
+			# Start of the first item and end of the last item
+			# The end offset is the next byte afterward, so subtract one for the interval
+			return interval(self[0][0], self[-1][1]-1).shift(self.offset).shift(self.ins.offset)
+
+	def shift_offsets(self, off):
+		"""Get each entry and shift start and end by @off"""
+
+		for i in range(len(self)):
+			_ = self[i]
+			self[i] = (_[0]+off,_[1]+off)
+
+	def add(self, sz, start=None):
+		"""
+		Add entry to the end of the table.
+		@sz is needed to determine the end offset.
+		@start is needed only for the first entry and IF the list doesn't start immediately after the jump table.
+		"""
+		ln = getattr(self.ins, self._ln)
+		lnval = ln.val
+
+		# Increment number of entries
+		ln.val += 1
+
+		if lnval == 0:
+			off = self.offset
+			if start is not None:
+				# Add in desired start offset (typically to start data at next page)
+				off += start
+
+			# First entry starts after jump table (4*1=4 bytes) and runs for sz length
+			z = (off, off + sz)
+			self[0] = z
+			return 0
+
+		else:
+			# Next entry starts at the end of the previous
+			prev = self[lnval-1]
+			z = (prev[1], prev[1] + sz)
+			self[lnval] = z
+			return lnval
+
 	def __getitem__(self, idx):
 		"""
 		Gets the index in the jumptable of the @idx'th entry in the jump table.
@@ -403,6 +452,40 @@ class member_list(member):
 		self._itemcls = itemcls
 		self._jumptable_ref = jumptable_ref
 
+	def __len__(self):
+		jt = getattr(self.ins, self._jumptable_ref)
+		return len(jt)
+
+	def add(self, sz, start=None):
+		"""
+		Add an entry to the end of the list of total size @sz.
+		@sz best determined by calling lenplan() on the struct as this class is oblivious to such details but the size is needed to determine appropriate offsets.
+		Returns the new jump table index of the entry
+		"""
+
+		# Access the jump table and get the index
+		jt = getattr(self.ins, self._jumptable_ref)
+		jt_idx = len(jt)
+
+		if jt_idx == 0:
+			# Adding first entry, nothing to move first
+			return jt.add(sz, start)
+		else:
+			# If not enough space to add another jumptable entry, then shift data to fit it
+			#if jt.sizeof + 4 > jt[0][0]:
+
+			# Get data offset and shift to new spot
+			off = jt.data_interval
+			new_off = off + 4
+
+			# Shift data
+			self.ins.fw[new_off.slice] = self.ins.fw[off.slice]
+
+			# Shift all offsets by 4
+			jt.shift_offsets(4)
+
+			# Add new jump table entry
+			return jt.add(sz, start)
 
 	def __getitem__(self, idx):
 		"""

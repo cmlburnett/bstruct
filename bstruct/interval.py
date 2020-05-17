@@ -29,6 +29,12 @@ class interval:
 	@property
 	def slice(self): return self._slice
 
+	@classmethod
+	def from_slice(self, s):
+		# Slice.end is not included, so substract one as interval does include the stop value
+		return cls(s.start, s.stop-1)
+
+
 	def str(self): return "<interval [%d,%d]>" % (self._start, self._stop)
 	def __repr__(self):
 		return "interval(%d,%d)" % (self._start, self._stop)

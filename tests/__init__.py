@@ -1,6 +1,19 @@
 import bstruct
 import unittest
 
+class mybytearray(bytearray):
+	"""
+	Wrapper so I can print indices to see it work
+	"""
+	def __getitem__(self, k):
+		v = super().__getitem__(k)
+		#print(['get', k, v])
+		return v
+	def __setitem__(self, k,v):
+		#print(['set', k, v])
+		super().__setitem__(k,v)
+
+
 class a(metaclass=bstruct.bstructmeta):
 	dat = {
 		'a': bstruct.member_1(0),
@@ -39,6 +52,13 @@ class e(metaclass=bstruct.bstructmeta):
 		'end': bstruct.member_ref(2),
 		'comment': bstruct.member_str('start', 'end'),
 	}
+	@staticmethod
+	def lenplan(name):
+		ret = 4
+
+		ret += len(name.encode('utf8'))
+
+		return ret
 
 class f(metaclass=bstruct.bstructmeta):
 	dat = {
@@ -47,13 +67,6 @@ class f(metaclass=bstruct.bstructmeta):
 		'names_jumptable': bstruct.member_jumptable('index_names', 'num_names', 'names'),
 		'names': bstruct.member_list(e, 'names_jumptable'),
 	}
-	@staticmethod
-	def lenplan(name):
-		ret = 4
-
-		ret += len(name.encode('utf8'))
-
-		return ret
 
 class g(metaclass=bstruct.bstructmeta):
 	dat = {
@@ -98,7 +111,7 @@ class j(metaclass=bstruct.bstructmeta):
 
 class SimpleTests(unittest.TestCase):
 	def test_1byte_a(self):
-		ba = bytearray(b'\0'*20)
+		ba = mybytearray(b'\0'*20)
 
 		x = a(ba, 0)
 
@@ -121,7 +134,7 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(ba.hex(), '0a141e2800000000000000000000000000000000')
 
 	def test_1byte_b(self):
-		ba = bytearray(b'\0'*20)
+		ba = mybytearray(b'\0'*20)
 
 		x = a(ba, 10)
 
@@ -145,7 +158,7 @@ class SimpleTests(unittest.TestCase):
 
 
 	def test_2byte_a(self):
-		ba = bytearray(b'\0'*20)
+		ba = mybytearray(b'\0'*20)
 
 		x = b(ba, 0)
 
@@ -168,7 +181,7 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(ba.hex(), '0a0014001e002800000000000000000000000000')
 
 	def test_2byte_b(self):
-		ba = bytearray(b'\0'*20)
+		ba = mybytearray(b'\0'*20)
 
 		x = b(ba, 10)
 
@@ -192,7 +205,7 @@ class SimpleTests(unittest.TestCase):
 
 
 	def test_4byte_a(self):
-		ba = bytearray(b'\0'*20)
+		ba = mybytearray(b'\0'*20)
 
 		x = c(ba, 0)
 
@@ -215,7 +228,7 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(ba.hex(), '0a000000140000001e0000002800000000000000')
 
 	def test_4byte_b(self):
-		ba = bytearray(b'\0'*20)
+		ba = mybytearray(b'\0'*20)
 
 		x = c(ba, 2)
 
@@ -239,7 +252,7 @@ class SimpleTests(unittest.TestCase):
 
 
 	def test_str_a(self):
-		ba = bytearray(b'\0'*20)
+		ba = mybytearray(b'\0'*20)
 
 		x = e(ba, 0)
 
@@ -257,7 +270,7 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(ba.hex(), '0a000f0000000000000068656c6c6f0000000000')
 
 	def test_str_b(self):
-		ba = bytearray(b'\0'*20)
+		ba = mybytearray(b'\0'*20)
 
 		x = e(ba, 5)
 
@@ -275,7 +288,7 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(ba.hex(), '00000000000a000f0000000000000068656c6c6f')
 
 	def test_str_c(self):
-		ba = bytearray(b'\0'*20)
+		ba = mybytearray(b'\0'*20)
 
 		x = g(ba, 5)
 
@@ -292,7 +305,7 @@ class SimpleTests(unittest.TestCase):
 	def test_names_b(self):
 		names = ['michael', 'Montgomery']
 
-		ba = bytearray(b'\0'*50)
+		ba = mybytearray(b'\0'*50)
 
 		x = f(ba, 0)
 
@@ -302,13 +315,13 @@ class SimpleTests(unittest.TestCase):
 		x.index_names.val = 5
 		x.num_names.val = 2
 
-		sz = f.lenplan(names[0])
+		sz = e.lenplan(names[0])
 		strt = x.names_jumptable.sizeof
 
 		x.names_jumptable[0] = (strt, strt+sz)
 		strt += sz
 
-		sz = f.lenplan(names[1])
+		sz = e.lenplan(names[1])
 		x.names_jumptable[1] = (strt, strt+sz)
 
 		x.names[0].start.val = 4
@@ -341,9 +354,122 @@ class SimpleTests(unittest.TestCase):
 
 		self.assertEqual(ba.hex(), '0500020000080013001300210004000b006d69636861656c04000e004d6f6e74676f6d657279000000000000000000000000')
 
+	def test_names_c(self):
+		names = ['michael', 'Montgomery', 'Popsicle']
+
+		ba = mybytearray(b'\0'*75)
+		x = f(ba, 10)
+		x.index_names.val = 4
+		x.num_names.val = 0
+
+		self.assertEqual(x.index_names.val, 4)
+		self.assertEqual(x.num_names.val, 0)
+		self.assertEqual(len(x.names), 0)
+		self.assertEqual(len(x.names_jumptable), 0)
+
+		### 0 ###
+		ln = e.lenplan(names[0])
+		self.assertEqual(ln, 4+len(names[0]))
+
+		idx = x.names.add(ln)
+		self.assertEqual(idx, 0)
+		self.assertEqual(x.num_names.val, 1)
+		self.assertEqual(len(x.names), 1)
+		self.assertEqual(len(x.names_jumptable), 1)
+
+		self.assertEqual(x.names_jumptable.offset, 4)
+		self.assertEqual(x.names_jumptable[0], (4, 15))
+
+		x.names[0].start.val = 4
+		x.names[0].end.val = 4 + len(names[0])
+		x.names[0].comment.val = names[0].encode('ascii')
+
+		self.assertEqual(x.names[0].start.val, 4)
+		self.assertEqual(x.names[0].end.val, 11)
+		self.assertEqual(x.names[0].comment.val, names[0])
+		self.assertEqual(ba.hex(), '000000000000000000000400010004000f0004000b006d69636861656c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000')
+
+
+		### 1 ###
+		ln = e.lenplan(names[1])
+		self.assertEqual(ln, 4+len(names[1]))
+
+		idx = x.names.add(ln)
+		self.assertEqual(x.num_names.val, 2)
+		self.assertEqual(idx, 1)
+
+		self.assertEqual(x.names_jumptable.offset, 4)
+		self.assertEqual(x.names_jumptable[0], (8, 19))
+		self.assertEqual(x.names_jumptable[1], (19, 33))
+		self.assertEqual(ba.hex(), '0000000000000000000004000200080013001300210004000b006d69636861656c000000000000000000000000000000000000000000000000000000000000000000000000000000000000')
+
+		x.names[1].start.val = 4
+		x.names[1].end.val = 4 + len(names[1])
+		x.names[1].comment.val = names[1].encode('ascii')
+
+		self.assertEqual(x.names[0].start.val, 4)
+		self.assertEqual(x.names[0].end.val, 4 + len(names[0]))
+		self.assertEqual(x.names[0].comment.val, names[0])
+		self.assertEqual(x.names[1].start.val, 4)
+		self.assertEqual(x.names[1].end.val, 4 + len(names[1]))
+		self.assertEqual(x.names[1].comment.val, names[1])
+		self.assertEqual(ba.hex(), '0000000000000000000004000200080013001300210004000b006d69636861656c04000e004d6f6e74676f6d65727900000000000000000000000000000000000000000000000000000000')
+
+
+
+		### 2 ###
+		ln = e.lenplan(names[2])
+		self.assertEqual(ln, 4+len(names[2]))
+
+		idx = x.names.add(ln)
+		self.assertEqual(x.num_names.val, 3)
+		self.assertEqual(idx, 2)
+
+		self.assertEqual(x.names_jumptable.offset, 4)
+		self.assertEqual(x.names_jumptable[0], (12, 23))
+		self.assertEqual(x.names_jumptable[1], (23, 37))
+		self.assertEqual(x.names_jumptable[2], (37, 49))
+		self.assertEqual(ba.hex(), '00000000000000000000040003000c001700170025002500310004000b006d69636861656c04000e004d6f6e74676f6d657279000000000000000000000000000000000000000000000000')
+
+		x.names[2].start.val = 4
+		x.names[2].end.val = 4 + len(names[2])
+		x.names[2].comment.val = names[2].encode('ascii')
+
+		self.assertEqual(x.names[0].start.val, 4)
+		self.assertEqual(x.names[0].end.val, 4 + len(names[0]))
+		self.assertEqual(x.names[0].comment.val, names[0])
+		self.assertEqual(x.names[1].start.val, 4)
+		self.assertEqual(x.names[1].end.val, 4 + len(names[1]))
+		self.assertEqual(x.names[1].comment.val, names[1])
+		self.assertEqual(x.names[2].start.val, 4)
+		self.assertEqual(x.names[2].end.val, 4 + len(names[2]))
+		self.assertEqual(x.names[2].comment.val, names[2])
+		self.assertEqual(ba.hex(), '00000000000000000000040003000c001700170025002500310004000b006d69636861656c04000e004d6f6e74676f6d65727904000c00506f707369636c65000000000000000000000000')
+
+	def test_names_d(self):
+		"""
+		Identical to test_names_c but without all the clutter as the insanity of asserts are not normally there and loops unrolled.
+		Everything should be the same otherwise as a single loop to set the names.
+		"""
+
+		names = ['michael', 'Montgomery', 'Popsicle']
+
+		ba = mybytearray(b'\0'*75)
+		x = f(ba, 10)
+		x.index_names.val = 4
+		x.num_names.val = 0
+
+		for i in range(len(names)):
+			name = names[i]
+			x.names.add(e.lenplan(name))
+			x.names[i].start.val = 4
+			x.names[i].end.val = 4 + len(name)
+			x.names[i].comment.val = name
+
+		self.assertEqual(ba.hex(), '00000000000000000000040003000c001700170025002500310004000b006d69636861656c04000e004d6f6e74676f6d65727904000c00506f707369636c65000000000000000000000000')
 
 	def test_binary_a(self):
-		ba = bytearray(b'\0'*50)
+		ba = mybytearray(b'\0'*50)
 
 		x = h(ba, 10)
 
@@ -361,7 +487,7 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(ba.hex(), '0000000000000000000061736369690000000000000000000000000000000000000000000000000000000000000000000000')
 
 	def test_binary_b(self):
-		ba = bytearray(b'\0'*50)
+		ba = mybytearray(b'\0'*50)
 
 		x = i(ba, 10)
 
@@ -389,7 +515,7 @@ class SimpleTests(unittest.TestCase):
 
 
 	def test_cond_a(self):
-		ba = bytearray(b'\0'*20)
+		ba = mybytearray(b'\0'*20)
 		ba[10] = ord('A')
 		ba[11] = 0x23
 		ba[12] = 0x34
