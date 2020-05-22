@@ -347,7 +347,7 @@ class member_jumptable(member):
 			_ = self[i]
 			self[i] = (_[0]+off,_[1]+off)
 
-	def add(self, sz, start=None):
+	def add(self, sz, start=None, page=None):
 		"""
 		Add entry to the end of the table.
 		@sz is needed to determine the end offset.
@@ -363,7 +363,7 @@ class member_jumptable(member):
 			off = self.offset
 			if start is not None:
 				# Add in desired start offset (typically to start data at next page)
-				off += start
+				off = start
 
 			# First entry starts after jump table (4*1=4 bytes) and runs for sz length
 			z = (off, off + sz)
@@ -456,10 +456,12 @@ class member_list(member):
 		jt = getattr(self.ins, self._jumptable_ref)
 		return len(jt)
 
-	def add(self, sz, start=None):
+	def add(self, sz, start=None, page=None):
 		"""
 		Add an entry to the end of the list of total size @sz.
-		@sz best determined by calling lenplan() on the struct as this class is oblivious to such details but the size is needed to determine appropriate offsets.
+		@sz best determined by calling lenplan() on the struct as this class is oblivious to such details but the size is needed to determine appropriate offset for the first page of data.
+		@page is needed to know how far to offset the second page of jumptable once the jumptable reaches the data.
+		Typically, @sz is 4096 less the size of the struct and @page is 4096 as this shifts the list to the next page boundary and then once the jump table exceeds the first 4096 byte page the list is shifted to the next 4096 byte page.
 		Returns the new jump table index of the entry
 		"""
 
@@ -469,23 +471,29 @@ class member_list(member):
 
 		if jt_idx == 0:
 			# Adding first entry, nothing to move first
-			return jt.add(sz, start)
+			return jt.add(sz, start, page)
 		else:
+			if page is None:
+				page = 4
+
 			# If not enough space to add another jumptable entry, then shift data to fit it
-			#if jt.sizeof + 4 > jt[0][0]:
+			if jt.sizeof + 4 > jt[0][0]:
+				# Get data offset and shift to new spot
+				off = jt.data_interval
+				new_off = off + page
 
-			# Get data offset and shift to new spot
-			off = jt.data_interval
-			new_off = off + 4
+				# Shift data
+				_ = self.ins.fw[off.slice]
+				self.ins.fw[new_off.slice] = _
+				#self.ins.fw[off.slice] = b'\xff'*(page)
+				for i in range(off.start, off.start+page):
+					self.ins.fw[i] = 0
 
-			# Shift data
-			self.ins.fw[new_off.slice] = self.ins.fw[off.slice]
-
-			# Shift all offsets by 4
-			jt.shift_offsets(4)
+				# Shift all offsets by @page
+				jt.shift_offsets(page)
 
 			# Add new jump table entry
-			return jt.add(sz, start)
+			return jt.add(sz, start, page)
 
 	def __getitem__(self, idx):
 		"""
