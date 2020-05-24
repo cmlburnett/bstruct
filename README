@@ -35,6 +35,32 @@ Index with where struct members are found:
 Note that 42 = 0x0000002A in little endian is 2a000000
 and that 2346298 = 0x000000000023CD3A in little endian is 3acd230000000000
 
+A more advanced feature is a jumptable that is used to store 2-byte offsets (both start and end) of a list of structs.
+	import bstruct
+	class person(metaclass=bstruct.bstructmeta):
+		dat = {
+			'num_names': bstruct.member_1(0),
+			'index_names': bstruct.member_ref(1),
+			'names_jumptable': bstruct.member_jumptable('index_names', 'num_names', 'names'),
+			'names': bstruct.member_list('names_jumptable'),
+		}
+		@staticmethod
+		def lenplan(names):
+			return 3 + sum([name.lenplan(_) for _ in names])
+
+	class name(metaclass=bstruct.bstructmeta):
+		dat = {
+			'first': bstruct.member_str(0, 20),
+			'last': bstruct.member_str(20, 40),
+		}
+		@staticmethod
+		def lenplan():
+			return 40
+
+This creates a struct that contains a jumptable linked to a list of name structs, where each name struct is 40 bytes of a name.
+The name struct need not be of fixed size, nor do they need to be byte-wise contiguous as each entry in the jumptable contains a start and end offset.
+Arguments to member_jumptable are the members that contain the offset start of the jumptable (index_names), the number of entries (num_names), and the list itself (names).
+
 
 ### Unit Testing ###
 Some basic unit testing is included.
