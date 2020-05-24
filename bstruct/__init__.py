@@ -352,6 +352,7 @@ class member_jumptable(member):
 		Add entry to the end of the table.
 		@sz is needed to determine the end offset.
 		@start is needed only for the first entry and IF the list doesn't start immediately after the jump table.
+		Return the 2-tuple offsets for the new entry.
 		"""
 		ln = getattr(self.ins, self._ln)
 		lnval = ln.val
