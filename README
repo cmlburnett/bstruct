@@ -160,6 +160,10 @@ This creates a struct that contains a jumptable linked to a list of name structs
 The name struct need not be of fixed size, nor do they need to be byte-wise contiguous as each entry in the jumptable contains a start and end offset.
 Arguments to member_jumptable are the members that contain the offset start of the jumptable (index_names), the number of entries (num_names), and the list itself (names).
 
+While it is not required that list items are sequential, it is entirely possible to rearrange them within the jumptable.
+If you go this route it is up to you to deal with that.
+member_jumptable.add() and member_list.add() assume the new item is sequential to the last item in the list.
+
 
 ### Unit Testing ###
 Some basic unit testing is included.

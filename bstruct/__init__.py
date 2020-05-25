@@ -76,12 +76,16 @@ class member:
 
 class member_binary(member):
 	"""
-	Plain binary access of specified length
+	Plain binary access of specified length.
 	"""
 	def __init__(self, offset):
 		self._offset = offset
 
 	def __getitem__(self, idx):
+		"""
+		Gets the byte(s) indicated by the index.
+		Index can be an integer, interval, or a slice.
+		"""
 		if isinstance(idx, int):
 			o = self.ins.offset + self._offset + idx
 			return self.ins.fw[o]
@@ -93,6 +97,9 @@ class member_binary(member):
 			raise NotImplementedError
 
 	def __setitem__(self, idx, val):
+		"""
+		Modify the byte(s) indicated by the index with the data in @val.
+		"""
 		if isinstance(idx, int):
 			o = self.ins.offset + self._offset + idx
 			self.ins.fw[o] = val
@@ -114,11 +121,20 @@ class member_binary_record(member):
 		self._size = size
 
 	@property
-	def size(self): return self._size
+	def size(self):
+		"""Gets the size of the binary record in bytes."""
+		return self._size
 	@size.setter
-	def size(self, val): self._size = val
+	def size(self, val):
+		"""Sets the size of the bnary record in bytes."""
+		self._size = val
 
 	def __getitem__(self, idx):
+		"""
+		Get binary data for the records indicated by the index.
+		Index can be an integer, interval, or slice.
+		Each record is returned as a byte() string.
+		"""
 		if isinstance(idx, int):
 			if idx < 0:
 				raise ValueError('No end-bound on records so cannot use negative indices: %d' % idx)
@@ -136,6 +152,11 @@ class member_binary_record(member):
 			raise NotImplementedError
 
 	def __setitem__(self, idx, val):
+		"""
+		Modifies the binary data for the records indicated by the index.
+		Index can be an integer, interval, or slice.
+		Each record is expected to be a byte() string.
+		"""
 		if isinstance(idx, int):
 			if idx < 0:
 				raise ValueError('No end-bound on records so cannot use negative indices: %d' % idx)
@@ -161,47 +182,36 @@ class member_binary_record(member):
 class member_struct(member):
 	"""
 	Basic member that uses struct library to ser/deser binary
+	Probably shouldn't use this directly in classes.
 	"""
 	@property
 	def val(self):
-		"""
-		Gets the value from binary as an integer
-		"""
+		"""Gets the value from binary as an integer"""
 		ret = struct.unpack(self.structstr, self.ins.fw[self.abs_slice])[0]
 		return ret
 	@val.setter
 	def val(self, v):
-		"""
-		Sets the value from an integer to binary
-		"""
+		"""Sets the value from an integer to binary"""
 		self.ins.fw[self.abs_slice] = struct.pack(self.structstr, v)
 
 	@property
 	def index(self):
-		"""
-		Gets the index 2-tuple of this member
-		"""
+		"""Gets the index 2-tuple of this member"""
 		return tuple(range(self._s.stop)[self._s])
 
 	@property
 	def abs_index(self):
-		"""
-		Gets absolute index 2-tuple of this member
-		"""
+		"""Gets absolute index 2-tuple of this member"""
 		return tuple(range(self.abs_clie.stop)[self.abs_slice])
 
 	@property
 	def slice(self):
-		"""
-		Gets the index of this member as a slice
-		"""
+		"""Gets the index of this member as a slice"""
 		return self._interval.slice
 
 	@property
 	def abs_slice(self):
-		"""
-		Gets the absolute index of this member as a slice.
-		"""
+		"""Gets the absolute index of this member as a slice"""
 		return (self._interval + self.ins.offset).slice
 
 class member_1(member_struct):
@@ -239,6 +249,7 @@ class member_8(member_struct):
 class member_ref(member_2):
 	"""
 	Reference member refers to other members of a struct.
+	Currently is a 2 byte value.
 	"""
 	pass
 
@@ -248,17 +259,24 @@ class member_str(member):
 	Mmeber that handles strings stored as UTF-8 binary.
 	"""
 	def __init__(self, start, end):
+		"""
+		Indicates the start and end of the UTF-8 encoded non-null terminated string.
+		If @start or @end is an integer, then the number is a fixed offset.
+		If @start or @end is a string, then it is taken to be a member of the struct whose value is the offset for the string.
+		"""
 		self.ref_start = start
 		self.ref_end = end
 
 	@property
 	def of_s(self):
+		"""Gets the starting offset of the string. If a string, then the referenced member's value is returned."""
 		if isinstance(self.ref_start, int):
 			return self.ref_start
 		else:
 			return getattr(self.ins, self.ref_start).val
 	@property
 	def of_e(self):
+		"""Gets the ending offset of the string. If a string, then the referenced member's value is returned."""
 		if isinstance(self.ref_end, int):
 			return self.ref_end
 		else:
@@ -266,11 +284,13 @@ class member_str(member):
 
 	@property
 	def val(self):
+		"""Gets the UTF-8 decoded string as a python str() value."""
 		s = slice(self.of_s, self.of_e)
 		return self.ins.fw[offslice(s, self.ins.offset)].decode('utf8')
 
 	@val.setter
 	def val(self, val):
+		"""Sets the UTF-8 encoded string. It must fit exactly within the start and end offsets set (ValueError raised if not)."""
 		ln = self.of_e - self.of_s
 
 		# Convert to binary if not yet
@@ -309,30 +329,22 @@ class member_jumptable(member):
 		self._lst = lst
 
 	def __len__(self):
-		"""
-		Length of the jump table in terms of number of entries (each entry is 4 bytes)
-		"""
+		"""Length of the jump table in terms of number of entries (each entry is 4 bytes)"""
 		return getattr(self.ins, self._ln).val
 
 	@property
 	def offset(self):
-		"""
-		Gets the offset that this jumptable is at.
-		"""
+		"""Gets the offset that this jumptable is at"""
 		return getattr(self.ins, self._offset_ref).val
 
 	@property
 	def sizeof(self):
-		"""
-		Size of the jump table in bytes. 4 bytes per entry.
-		"""
+		"""Size of the jump table in bytes. 4 bytes per entry"""
 		return len(self) * 4
 
 	@property
 	def data_interval(self):
-		"""
-		Gets the interval of the entire data block
-		"""
+		"""Gets the interval of the entire data block. Will return None is zero-lengthed."""
 		if len(self) == 0:
 			return None
 		else:
@@ -341,25 +353,29 @@ class member_jumptable(member):
 			return interval(self[0][0], self[-1][1]-1).shift(self.offset).shift(self.ins.offset)
 
 	def shift_offsets(self, off):
-		"""Get each entry and shift start and end by @off"""
+		"""Get each entry and shift start and end by @off. Mostly an internal function when expanding the jumptable beyond its alloted space and the data is being hsifted elsewhere."""
 
 		for i in range(len(self)):
 			_ = self[i]
 			self[i] = (_[0]+off,_[1]+off)
 
-	def add(self, sz, start=None, page=None):
+	def add(self, sz, start=None):
 		"""
-		Add entry to the end of the table.
-		@sz is needed to determine the end offset.
-		@start is needed only for the first entry and IF the list doesn't start immediately after the jump table.
+		Add entry to the end of the table (this should be called from member_list.add() and not directly.
+		@sz is needed to determine the end offset (the size of the new entry).
+		@start is needed only for the first entry and IF the list doesn't start immediately after the jump table (supply as None if list immediately follows the jumptable).
 		Return the 2-tuple offsets for the new entry.
+
+		This function assumes the space needed for another jumptable entry is already allocated/handled.
 		"""
+		# Get the length member so that it can be read and updated
 		ln = getattr(self.ins, self._ln)
 		lnval = ln.val
 
 		# Increment number of entries
-		ln.val += 1
+		ln.val = lnval + 1
 
+		# If no entries, then the @start comes into play
 		if lnval == 0:
 			off = self.offset
 			if start is not None:
@@ -443,7 +459,7 @@ class member_jumptable(member):
 
 class member_list(member):
 	"""
-	Member is a list of entries of the specified item class, managed by a jump table.
+	Member is a list of entries of the specified item class, managed by a jump table (eg, member_jumptable).
 	"""
 	def __init__(self, itemcls, jumptable_ref):
 		"""
@@ -454,6 +470,7 @@ class member_list(member):
 		self._jumptable_ref = jumptable_ref
 
 	def __len__(self):
+		"""Gets the length of the list, which in turn calls len() on the jumptable member."""
 		jt = getattr(self.ins, self._jumptable_ref)
 		return len(jt)
 
@@ -464,6 +481,8 @@ class member_list(member):
 		@page is needed to know how far to offset the second page of jumptable once the jumptable reaches the data.
 		Typically, @sz is 4096 less the size of the struct and @page is 4096 as this shifts the list to the next page boundary and then once the jump table exceeds the first 4096 byte page the list is shifted to the next 4096 byte page.
 		Returns the new jump table index of the entry
+
+		Space for the expanded jumptable and the list itself are assumed to have been allocated/handled already. No space management is done here.
 		"""
 
 		# Access the jump table and get the index
@@ -472,7 +491,7 @@ class member_list(member):
 
 		if jt_idx == 0:
 			# Adding first entry, nothing to move first
-			return jt.add(sz, start, page)
+			return jt.add(sz, start)
 		else:
 			if page is None:
 				page = 4
@@ -494,12 +513,10 @@ class member_list(member):
 				jt.shift_offsets(page)
 
 			# Add new jump table entry
-			return jt.add(sz, start, page)
+			return jt.add(sz, start)
 
 	def __getitem__(self, idx):
-		"""
-		Get the @idx'th item as an instance of the sub-struct class.
-		"""
+		"""Get the @idx'th item as an instance of the sub-struct class"""
 		if isinstance(idx, int):
 			pass
 		elif isinstance(idx, slice):
@@ -527,12 +544,20 @@ class bstructmeta(type):
 	Metaclass to handle programmatically creating properties of the struct.
 	Seems more appropriate to do this as a metaclass than with either inheritance
 	 or boilerplate copy/paste for each struct class.
+
+	It iterates of the dat dictionary and creates instances of each member class and wraps them in bstructmeta.fancyprop to acts like a property.
+	If condtional dictionary is present, then a condition_on function is created to handle creating polymorphed struct types on the fly as requested.
 	"""
 
 	class fancyprop:
 		"""
-		Property that passes instance of object to the struct (cannot do this at
-		declare time for the class).
+		Property that passes instance of object to the struct (cannot do this at declare-time for the class).
+		When the struct class is itself created, the metaclass (bstructmeta) processes the class definition and instantiates the member classes.
+		However, the instance of the struct class is not created at that time.
+		So, in order for runtime instances of the struct to access its properties, fancyprop.__get__ is where the instance is finally available for access.
+		Thus, when foostruct.membername is accessed, the instance of foostruct is passed in as the @ins parameter which is then set on the member struct @ins property.
+
+		Perhaps a little confusing, but it's all about jugggling the Python data model.
 		"""
 
 		def __init__(self, s):
