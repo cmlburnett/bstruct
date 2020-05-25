@@ -35,6 +35,67 @@ Index with where struct members are found:
 Note that 42 = 0x0000002A in little endian is 2a000000
 and that 2346298 = 0x000000000023CD3A in little endian is 3acd230000000000
 
+Polymorphism is supported. In the following example, a person can be an employee or a volunteer.
+Each has different properties encoded in the person.data binary field.
+	import bstruct
+	class person(metaclass=bstruct.bstructmeta):
+		dat = {
+			'type': bstruct.member_1(0),
+			'name': bstruct.member_str(1,16),
+			'data': bstruct.member_binary(17),
+		}
+		conditional = {
+			'type': {
+				'E': employee,
+				'V': volunteer,
+			}
+		}
+		@staticmethod
+		def lenplan(typ, **kargs):
+			if typ == 'E':
+				return employee.lenplan(**kargs)
+			elif type == 'V':
+				return volunteer.lenplan(**kargs)
+			else:
+				raise Exception
+	class employee(metaclass=bstruct.bstructmeta):
+		dat = {
+			'type': bstruct.member_1(0),
+			'name': bstruct.member_str(1,16),
+			'ID': bstruct.member_8(17),
+			'pay': bstruct.member_4(25),
+		}
+		@staticmethod
+		def lenplan():
+			return 29
+	class volunteer(metaclass=bstruct.bstructmeta):
+		dat = {
+			'type': bstruct.member_1(0),
+			'name': bstruct.member_str(1,16),
+			'hours': bstruct.member_4(17),
+		}
+		@staticmethod
+		def lenplan():
+			return 21
+
+On an instance of a person struct, call condition_on(field) to get a polymorphed struct
+		b = bytearray(b'\0'*50)
+		p = person(b, 0)
+		p.type.val = 'E'
+		p = p.condition_on('type')
+		p.name.val = 'Bob Ross'
+		p.ID = 12
+
+		b = bytearray(b'\0'*50)
+		p = person(b, 0)
+		p.type.val = 'V'
+		p = p.condition_on('type')
+		p.name.val = 'Bob Dole'
+		p.hours.val = 1248
+
+Note that both the person() instance and employee() instance access the exact same data and so they act more like a union.
+Each can modify the available fields.
+
 A more advanced feature is a jumptable that is used to store 2-byte offsets (both start and end) of a list of structs.
 	import bstruct
 	class person(metaclass=bstruct.bstructmeta):
