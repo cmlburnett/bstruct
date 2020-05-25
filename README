@@ -52,7 +52,24 @@ The member types supported in the library include:
 - member_jumptable -- a list of 2-tuples of member_ref fields indicating the start/end of list items
 - member_list -- a list of arbitrary structs in a list
 
-Other member types can be defined outside of this library and used.
+Other member types can be defined outside of this library and used (recommend to inherit from bstruct.member).
+
+### Member types ###
+Members and their arguments:
+
+	member_1(offset) -- @offset is the offset of the start of the member relative to start of the struct
+	member_2(offset) -- same as member_1
+	member_4(offset) -- same as member_1
+	member_8(offset) -- same as member_1
+	member_ref(offset) -- same as member_1
+	member_binary(offset) -- same as member_1
+	member_binaryrecord(offset, size) -- @size of each record (eg, [0] == (0, size), [1] == (size,size*2))
+	member_ref(offset) -- same as member_1
+	member_str(start, end) -- if @start or @end is an integer, it is a relative offset; otherwise take as a member name in which the value of that member (a member_ref) is used as the offset
+	member_jumptable(offset, len, list) -- all are names of other members. @offset is the member indicating the start offset of the jumptable/list. @len is the member indicating the number of entries. @list is the member_list.
+	member_list(item_class, jt_ref) -- @item_class is the class type for the entries (if polymorphic, supply the base struct). @jt_ref is the name of the jumptable member maanging the list.
+
+Examples are probably the best way to understand how these structs are defined and used.
 
 ### Polymorphism ###
 Polymorphism is supported. In the following example, a person can be an employee or a volunteer.
@@ -124,7 +141,7 @@ A more advanced feature is a jumptable that is used to store 2-byte offsets (bot
 			'num_names': bstruct.member_1(0),
 			'index_names': bstruct.member_ref(1),
 			'names_jumptable': bstruct.member_jumptable('index_names', 'num_names', 'names'),
-			'names': bstruct.member_list('names_jumptable'),
+			'names': bstruct.member_list(name, 'names_jumptable'),
 		}
 		@staticmethod
 		def lenplan(names):
