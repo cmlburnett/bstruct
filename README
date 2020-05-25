@@ -35,6 +35,26 @@ Index with where struct members are found:
 Note that 42 = 0x0000002A in little endian is 2a000000
 and that 2346298 = 0x000000000023CD3A in little endian is 3acd230000000000
 
+### Required Fields ###
+The class requires use of the metaclass mentioned above.
+The class also requires a dictionary named "dat" to contain a map from member names to the member types.
+Optionally, a "conditional" dictionary can be used for polymorphism (see below).
+
+The member types supported in the library include:
+- member_1 -- 1 byte field
+- member_2 -- 2 byte field
+- member_4 -- 4 byte field
+- member_8 -- 8 byte field
+- member_binary -- arbitrary binary data field using item indices [] access
+- member_binary_record -- arbitrary binary data field using item indices [] access assuming each record is the specified bytes long
+- member_ref -- relative offset (currently a 2 byte field)
+- member_str -- string encoded as UTF-8 can utilize member_ref or fixed integer offsets to determine start and end of the string
+- member_jumptable -- a list of 2-tuples of member_ref fields indicating the start/end of list items
+- member_list -- a list of arbitrary structs in a list
+
+Other member types can be defined outside of this library and used.
+
+### Polymorphism ###
 Polymorphism is supported. In the following example, a person can be an employee or a volunteer.
 Each has different properties encoded in the person.data binary field.
 	import bstruct
@@ -96,6 +116,7 @@ On an instance of a person struct, call condition_on(field) to get a polymorphed
 Note that both the person() instance and employee() instance access the exact same data and so they act more like a union.
 Each can modify the available fields.
 
+### Jumptables ###
 A more advanced feature is a jumptable that is used to store 2-byte offsets (both start and end) of a list of structs.
 	import bstruct
 	class person(metaclass=bstruct.bstructmeta):
@@ -129,4 +150,13 @@ Some basic unit testing is included.
 	python setup.py test
 
 All should pass, of course.
+
+### Installing ###
+Easy:
+
+	python setup.py install
+
+Or
+
+	sudo python setup.py install
 
