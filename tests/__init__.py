@@ -17,34 +17,34 @@ class mybytearray(bytearray):
 
 class a(metaclass=bstruct.bstructmeta):
 	dat = {
-		'a': bstruct.member_1(0),
-		'b': bstruct.member_1(1),
-		'c': bstruct.member_1(2),
-		'd': bstruct.member_1(3),
+		'a': bstruct.member_1I(0),
+		'b': bstruct.member_1I(1),
+		'c': bstruct.member_1I(2),
+		'd': bstruct.member_1I(3),
 	}
 
 class b(metaclass=bstruct.bstructmeta):
 	dat = {
-		'a': bstruct.member_2(0),
-		'b': bstruct.member_2(2),
-		'c': bstruct.member_2(4),
-		'd': bstruct.member_2(6),
+		'a': bstruct.member_2I(0),
+		'b': bstruct.member_2I(2),
+		'c': bstruct.member_2I(4),
+		'd': bstruct.member_2I(6),
 	}
 
 class c(metaclass=bstruct.bstructmeta):
 	dat = {
-		'a': bstruct.member_1(0),
-		'b': bstruct.member_1(4),
-		'c': bstruct.member_1(8),
-		'd': bstruct.member_1(12),
+		'a': bstruct.member_1I(0),
+		'b': bstruct.member_1I(4),
+		'c': bstruct.member_1I(8),
+		'd': bstruct.member_1I(12),
 	}
 
 class d(metaclass=bstruct.bstructmeta):
 	dat = {
-		'a': bstruct.member_8(0),
-		'b': bstruct.member_8(8),
-		'c': bstruct.member_8(16),
-		'd': bstruct.member_8(24),
+		'a': bstruct.member_8I(0),
+		'b': bstruct.member_8I(8),
+		'c': bstruct.member_8I(16),
+		'd': bstruct.member_8I(24),
 	}
 
 class e(metaclass=bstruct.bstructmeta):
@@ -64,7 +64,7 @@ class e(metaclass=bstruct.bstructmeta):
 class f(metaclass=bstruct.bstructmeta):
 	dat = {
 		'index_names': bstruct.member_ref(0),
-		'num_names': bstruct.member_2(2),
+		'num_names': bstruct.member_2I(2),
 		'names_jumptable': bstruct.member_jumptable('index_names', 'num_names', 'names'),
 		'names': bstruct.member_list(e, 'names_jumptable'),
 	}
@@ -95,16 +95,16 @@ class i(metaclass=bstruct.bstructmeta):
 class ja(metaclass=bstruct.bstructmeta):
 	dat = {
 		'type': bstruct.member_str(0, 1),
-		'a': bstruct.member_1(1),
-		'b': bstruct.member_1(2),
-		'c': bstruct.member_1(3),
-		'd': bstruct.member_1(4),
+		'a': bstruct.member_1I(1),
+		'b': bstruct.member_1I(2),
+		'c': bstruct.member_1I(3),
+		'd': bstruct.member_1I(4),
 	}
 class jb(metaclass=bstruct.bstructmeta):
 	dat = {
 		'type': bstruct.member_str(0, 1),
-		'a': bstruct.member_2(1),
-		'b': bstruct.member_2(3),
+		'a': bstruct.member_2I(1),
+		'b': bstruct.member_2I(3),
 	}
 class j(metaclass=bstruct.bstructmeta):
 	dat = {
@@ -126,32 +126,32 @@ class k(metaclass=bstruct.bstructmeta):
 
 class m1(metaclass=bstruct.bstructmeta):
 	dat = {
-		'num_arr': bstruct.member_1(0),
+		'num_arr': bstruct.member_1I(0),
 		'arr': bstruct.member_1I_array(1),
 	}
 class m2(metaclass=bstruct.bstructmeta):
 	dat = {
-		'num_arr': bstruct.member_1(0),
+		'num_arr': bstruct.member_1I(0),
 		'arr': bstruct.member_2I_array(1),
 	}
 class m3(metaclass=bstruct.bstructmeta):
 	dat = {
-		'num_arr': bstruct.member_1(0),
+		'num_arr': bstruct.member_1I(0),
 		'arr': bstruct.member_4I_array(1),
 	}
 class m4(metaclass=bstruct.bstructmeta):
 	dat = {
-		'num_arr': bstruct.member_1(0),
+		'num_arr': bstruct.member_1I(0),
 		'arr': bstruct.member_8I_array(1),
 	}
 class m5(metaclass=bstruct.bstructmeta):
 	dat = {
-		'num_arr': bstruct.member_1(0),
+		'num_arr': bstruct.member_1I(0),
 		'arr': bstruct.member_4F_array(1),
 	}
 class m6(metaclass=bstruct.bstructmeta):
 	dat = {
-		'num_arr': bstruct.member_1(0),
+		'num_arr': bstruct.member_1I(0),
 		'arr': bstruct.member_8F_array(1),
 	}
 

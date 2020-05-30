@@ -41,10 +41,10 @@ The class also requires a dictionary named "dat" to contain a map from member na
 Optionally, a "conditional" dictionary can be used for polymorphism (see below).
 
 The member types supported in the library include:
-- member_1 -- 1 byte field
-- member_2 -- 2 byte field
-- member_4 -- 4 byte field
-- member_8 -- 8 byte field
+- member_1I -- 1 byte integer field
+- member_2I -- 2 byte integer field
+- member_4I -- 4 byte integer field
+- member_8I -- 8 byte integer field
 - member_1I_array -- 1 byte integer array
 - member_2I_array -- 2 byte integer array
 - member_4I_array -- 4 byte integer array
@@ -64,20 +64,20 @@ Other member types can be defined outside of this library and used (recommend to
 ### Member types ###
 Members and their arguments:
 
-	member_1(offset) -- @offset is the offset of the start of the member relative to start of the struct
-	member_2(offset) -- same as member_1
-	member_4(offset) -- same as member_1
-	member_8(offset) -- same as member_1
-	member_ref(offset) -- same as member_1
-	member_1I_array(offset) -- same as member_1 with items accessed by array index
-	member_2I_array(offset) -- same as member_1 with items accessed by array index
-	member_4I_array(offset) -- same as member_1 with items accessed by array index
-	member_8I_array(offset) -- same as member_1 with items accessed by array index
-	member_4F_array(offset) -- same as member_1 with items accessed by array index
-	member_8F_array(offset) -- same as member_1 with items accessed by array index
-	member_binary(offset) -- same as member_1
+	member_1I(offset) -- @offset is the offset of the start of the member relative to start of the struct
+	member_2I(offset) -- same as member_1I
+	member_4I(offset) -- same as member_1I
+	member_8I(offset) -- same as member_1I
+	member_ref(offset) -- same as member_1I
+	member_1I_array(offset) -- same as member_1I with items accessed by array index
+	member_2I_array(offset) -- same as member_1I with items accessed by array index
+	member_4I_array(offset) -- same as member_1I with items accessed by array index
+	member_8I_array(offset) -- same as member_1I with items accessed by array index
+	member_4F_array(offset) -- same as member_1I with items accessed by array index
+	member_8F_array(offset) -- same as member_1I with items accessed by array index
+	member_binary(offset) -- same as member_I1
 	member_binaryrecord(offset, size) -- @size of each record (eg, [0] == (0, size), [1] == (size,size*2))
-	member_ref(offset) -- same as member_1
+	member_ref(offset) -- same as member_I1
 	member_str(start, end) -- if @start or @end is an integer, it is a relative offset; otherwise take as a member name in which the value of that member (a member_ref) is used as the offset
 	member_jumptable(offset, len, list) -- all are names of other members. @offset is the member indicating the start offset of the jumptable/list. @len is the member indicating the number of entries. @list is the member_list.
 	member_list(item_class, jt_ref) -- @item_class is the class type for the entries (if polymorphic, supply the base struct). @jt_ref is the name of the jumptable member maanging the list.
@@ -88,10 +88,10 @@ Examples are probably the best way to understand how these structs are defined a
 ### Simple integer types ###
 There are four integer types:
 
-	member_1
-	member_2
-	member_4
-	member_8
+	member_1I
+	member_2I
+	member_4I
+	member_8I
 
 These represent 1, 2, 4, and 8 byte integers.
 
@@ -108,7 +108,7 @@ Each has different properties encoded in the person.data binary field.
 	import bstruct
 	class person(metaclass=bstruct.bstructmeta):
 		dat = {
-			'type': bstruct.member_1(0),
+			'type': bstruct.member_1I(0),
 			'name': bstruct.member_str(1,16),
 			'data': bstruct.member_binary(17),
 		}
@@ -128,19 +128,19 @@ Each has different properties encoded in the person.data binary field.
 				raise Exception
 	class employee(metaclass=bstruct.bstructmeta):
 		dat = {
-			'type': bstruct.member_1(0),
+			'type': bstruct.member_1I(0),
 			'name': bstruct.member_str(1,16),
-			'ID': bstruct.member_8(17),
-			'pay': bstruct.member_4(25),
+			'ID': bstruct.member_8I(17),
+			'pay': bstruct.member_4I(25),
 		}
 		@staticmethod
 		def lenplan():
 			return 29
 	class volunteer(metaclass=bstruct.bstructmeta):
 		dat = {
-			'type': bstruct.member_1(0),
+			'type': bstruct.member_1I(0),
 			'name': bstruct.member_str(1,16),
-			'hours': bstruct.member_4(17),
+			'hours': bstruct.member_4I(17),
 		}
 		@staticmethod
 		def lenplan():
@@ -169,7 +169,7 @@ A more advanced feature is a jumptable that is used to store 2-byte offsets (bot
 	import bstruct
 	class person(metaclass=bstruct.bstructmeta):
 		dat = {
-			'num_names': bstruct.member_1(0),
+			'num_names': bstruct.member_1I(0),
 			'index_names': bstruct.member_ref(1),
 			'names_jumptable': bstruct.member_jumptable('index_names', 'num_names', 'names'),
 			'names': bstruct.member_list(name, 'names_jumptable'),
@@ -204,7 +204,7 @@ For example:
 
 	class names(metaclass=bstruct.bstructmeta):
 		dat = {
-			'num_names': bstruct.member_1(0),
+			'num_names': bstruct.member_1I(0),
 			'index_names': bstruct.member_ref(1),
 			'names_jumptable': bstruct.member_jumptable('index_names', 'num_names', 'names'),
 			'names': bstruct.member_list(name, 'names_jumptable'),
@@ -228,7 +228,7 @@ For example:
 		}
 	class employer(metaclass=bstruct.bstructmeta):
 		dat = {
-			'employee_id': bstruct.member_4(0),
+			'employee_id': bstruct.member_4I(0),
 			'names': bstruct.member_substruct(4, names),
 		}
 

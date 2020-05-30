@@ -36,17 +36,6 @@ Index with where struct members are found:
 Note that 42 = 0x0000002A in little endian is 2a000000
 and that 2346298 = 0x000000000023CD3A in little endian is 3acd230000000000
 
-Member types:
-	member_1				1-byte integer
-	member_2				2-byte integer
-	member_4				4-byte integer
-	member_8				8-byte integer
-	member_binary			Arbitrary binary data access as list index [] access
-	member_binary_record	Arbitrary data access in blocks of binary blobs as "records"
-	member_ref				Same as a 2-byte integer, but interpreted as a byte index indirect reference
-	member_jumptable		Jump table list of 2-tuple of (start,end) byte indices
-	member_list				List of structs with (start,end) boundaries in jumptable
-
 To use, struct class should use metaclass bstructmeta.
 This defines __init__ method, if not present in the struct class.
 The class should define a dat dictionary that maps member names to member_* instances.
@@ -214,32 +203,32 @@ class member_struct(member):
 		"""Gets the absolute index of this member as a slice"""
 		return (self._interval + self.ins.offset).slice
 
-class member_1(member_struct):
-	""" One byte struct member """
+class member_1I(member_struct):
+	""" One byte integer struct member """
 	def __init__(self, offset):
 		self.offset = offset
 		self.len = 1
 		self.structstr = "<B"
 		self._interval = interval(offset,offset + self.len-1)
 
-class member_2(member_struct):
-	""" Two byte struct member """
+class member_2I(member_struct):
+	""" Two byte integer struct member """
 	def __init__(self, offset):
 		self.offset = offset
 		self.len = 2
 		self.structstr = "<H"
 		self._interval = interval(offset,offset + self.len-1)
 
-class member_4(member_struct):
-	""" Four byte struct member """
+class member_4I(member_struct):
+	""" Four byte integer struct member """
 	def __init__(self, offset):
 		self.offset = offset
 		self.len = 4
 		self.structstr = "<I"
 		self._interval = interval(offset,offset + self.len-1)
 
-class member_8(member_struct):
-	""" Eight byte struct member """
+class member_8I(member_struct):
+	""" Eight byte integer struct member """
 	def __init__(self, offset):
 		self.offset = offset
 		self.len = 8
@@ -297,7 +286,7 @@ class member_8F_array(member_array):
 	def __init__(self, offset):
 		super().__init__(offset, 8, "d")
 
-class member_ref(member_2):
+class member_ref(member_2I):
 	"""
 	Reference member refers to other members of a struct.
 	Currently is a 2 byte value.
