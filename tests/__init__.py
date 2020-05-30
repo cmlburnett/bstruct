@@ -117,6 +117,43 @@ class j(metaclass=bstruct.bstructmeta):
 		}
 	}
 
+class k(metaclass=bstruct.bstructmeta):
+	dat = {
+		'type': bstruct.member_str(0, 1),
+		'data': bstruct.member_substruct(10, d),
+	}
+
+class m1(metaclass=bstruct.bstructmeta):
+	dat = {
+		'num_arr': bstruct.member_1(0),
+		'arr': bstruct.member_1I_array(1),
+	}
+class m2(metaclass=bstruct.bstructmeta):
+	dat = {
+		'num_arr': bstruct.member_1(0),
+		'arr': bstruct.member_2I_array(1),
+	}
+class m3(metaclass=bstruct.bstructmeta):
+	dat = {
+		'num_arr': bstruct.member_1(0),
+		'arr': bstruct.member_4I_array(1),
+	}
+class m4(metaclass=bstruct.bstructmeta):
+	dat = {
+		'num_arr': bstruct.member_1(0),
+		'arr': bstruct.member_8I_array(1),
+	}
+class m5(metaclass=bstruct.bstructmeta):
+	dat = {
+		'num_arr': bstruct.member_1(0),
+		'arr': bstruct.member_4F_array(1),
+	}
+class m6(metaclass=bstruct.bstructmeta):
+	dat = {
+		'num_arr': bstruct.member_1(0),
+		'arr': bstruct.member_8F_array(1),
+	}
+
 class SimpleTests(unittest.TestCase):
 	def test_1byte_a(self):
 		ba = mybytearray(b'\0'*20)
@@ -657,6 +694,137 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(x.data[0:4], b'\x23\x34\x45\x56')
 
 		self.assertEqual(ba.hex(), '0000000000000000000042233445560000000000')
+
+	def test_sub_a(self):
+		ba = mybytearray(b'\0'*50)
+
+		x = k(ba, 0)
+		x.type.val = 'A'
+		x.data.a.val = 10
+		x.data.b.val = 20
+		x.data.c.val = 30
+		x.data.d.val = 40
+
+		self.assertEqual(x.type.val, 'A')
+		self.assertEqual(x.data.a.val, 10)
+		self.assertEqual(x.data.b.val, 20)
+		self.assertEqual(x.data.c.val, 30)
+		self.assertEqual(x.data.d.val, 40)
+
+		self.assertEqual(ba.hex(), '410000000000000000000a0000000000000014000000000000001e0000000000000028000000000000000000000000000000')
+
+	def test_array_1I(self):
+		ba = mybytearray(b'\0'*20)
+
+		x = m1(ba, 0)
+		self.assertEqual(x.arr._struct_char, 'B')
+
+		x.num_arr.val = 3
+		x.arr[0] = 10
+		x.arr[1] = 20
+		x.arr[2] = 30
+
+		self.assertEqual(x.num_arr.val, 3)
+		self.assertEqual(x.arr[0], 10)
+		self.assertEqual(x.arr[1], 20)
+		self.assertEqual(x.arr[2], 30)
+
+		self.assertEqual(ba.hex(), '030a141e00000000000000000000000000000000')
+
+	def test_array_2I(self):
+		ba = mybytearray(b'\0'*20)
+
+		x = m2(ba, 0)
+		self.assertEqual(x.arr._struct_char, 'H')
+
+		x.num_arr.val = 3
+		x.arr[0] = 10
+		x.arr[1] = 20
+		x.arr[2] = 30
+
+		self.assertEqual(x.num_arr.val, 3)
+		self.assertEqual(x.arr[0], 10)
+		self.assertEqual(x.arr[1], 20)
+		self.assertEqual(x.arr[2], 30)
+
+		self.assertEqual(ba.hex(), '030a0014001e0000000000000000000000000000')
+
+	def test_array_4I(self):
+		ba = mybytearray(b'\0'*20)
+
+		x = m3(ba, 0)
+		self.assertEqual(x.arr._struct_char, 'I')
+
+		x.num_arr.val = 3
+		x.arr[0] = 10
+		x.arr[1] = 20
+		x.arr[2] = 30
+
+		self.assertEqual(x.num_arr.val, 3)
+		self.assertEqual(x.arr[0], 10)
+		self.assertEqual(x.arr[1], 20)
+		self.assertEqual(x.arr[2], 30)
+
+		self.assertEqual(ba.hex(), '030a000000140000001e00000000000000000000')
+
+	def test_array_8I(self):
+		ba = mybytearray(b'\0'*20)
+
+		x = m4(ba, 0)
+		self.assertEqual(x.arr._struct_char, 'Q')
+
+		x.num_arr.val = 3
+		x.arr[0] = 10
+		x.arr[1] = 20
+		x.arr[2] = 30
+
+		self.assertEqual(x.num_arr.val, 3)
+		self.assertEqual(x.arr[0], 10)
+		self.assertEqual(x.arr[1], 20)
+		self.assertEqual(x.arr[2], 30)
+
+		self.assertEqual(ba.hex(), '030a0000000000000014000000000000001e00000000000000')
+
+	def test_array_4F(self):
+		ba = mybytearray(b'\0'*20)
+
+		x = m5(ba, 0)
+		self.assertEqual(x.arr._struct_char, 'f')
+
+		vals = [1.5555000305175781, 3.140000104904175, -10.823530197143555]
+
+		x.num_arr.val = 3
+		x.arr[0] = vals[0]
+		x.arr[1] = vals[1]
+		x.arr[2] = vals[2]
+
+		self.assertEqual(x.num_arr.val, 3)
+		self.assertEqual(x.arr[0], vals[0])
+		self.assertEqual(x.arr[1], vals[1])
+		self.assertEqual(x.arr[2], vals[2])
+
+		self.assertEqual(ba.hex(), '03a01ac73fc3f548402e2d2dc100000000000000')
+
+	def test_array_8I(self):
+		ba = mybytearray(b'\0'*20)
+
+		x = m6(ba, 0)
+		self.assertEqual(x.arr._struct_char, 'd')
+
+		vals = [1.5555000305175781, 3.140000104904175, -10.823530197143555]
+
+		x.num_arr.val = 3
+		x.arr[0] = vals[0]
+		x.arr[1] = vals[1]
+		x.arr[2] = vals[2]
+
+		self.assertEqual(x.num_arr.val, 3)
+		self.assertEqual(x.arr[0], vals[0])
+		self.assertEqual(x.arr[1], vals[1])
+		self.assertEqual(x.arr[2], vals[2])
+
+		self.assertEqual(ba.hex(), '030000000054e3f83f00000060b81e0940000000c0a5a525c0')
+
 
 class intervalTests(unittest.TestCase):
 	def test_basic(self):

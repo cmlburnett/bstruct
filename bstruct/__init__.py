@@ -177,7 +177,7 @@ class member_binary_record(member):
 		elif isinstance(idx, interval):
 			self[idx.slice] = val
 		else:
-			raise NotImplementedError
+			raise TypeError("Got unercognized type to set item for key '%s' to '%s'" % (idx,val))
 
 class member_struct(member):
 	"""
@@ -246,6 +246,57 @@ class member_8(member_struct):
 		self.structstr = "<Q"
 		self._interval = interval(offset,offset + self.len-1)
 
+class member_array(member_binary_record):
+	def __init__(self, offset, ln, struct_char):
+		super().__init__(offset, ln)
+		self._struct_char = struct_char
+
+	def __getitem__(self, idx):
+		if isinstance(idx, int):
+			ret = super().__getitem__(idx)
+			return struct.unpack("<" + self._struct_char, ret)[0]
+		elif isinstance(idx, slice):
+			raise NotImplementedError
+		elif isinstance(idx, interval):
+			raise NotImplementedError
+		else:
+			raise TypeError("Got unrecognized type to get item for key '%s'" % (idx,))
+
+	def __setitem__(self, idx, val):
+		if isinstance(idx, int):
+			val = struct.pack("<" + self._struct_char, val)
+			super().__setitem__(idx, val)
+		elif isinstance(idx, slice):
+			raise NotImplementedError
+		elif isinstance(idx, interval):
+			raise NotImplementedError
+		else:
+			raise TypeError("Got unrecognized type to set item for key '%s' to '%s'" % (idx,val))
+
+class member_1I_array(member_array):
+	def __init__(self, offset):
+		super().__init__(offset, 1, "B")
+
+class member_2I_array(member_array):
+	def __init__(self, offset):
+		super().__init__(offset, 2, "H")
+
+class member_4I_array(member_array):
+	def __init__(self, offset):
+		super().__init__(offset, 4, "I")
+
+class member_8I_array(member_array):
+	def __init__(self, offset):
+		super().__init__(offset, 8, "Q")
+
+class member_4F_array(member_array):
+	def __init__(self, offset):
+		super().__init__(offset, 4, "f")
+
+class member_8F_array(member_array):
+	def __init__(self, offset):
+		super().__init__(offset, 8, "d")
+
 class member_ref(member_2):
 	"""
 	Reference member refers to other members of a struct.
@@ -253,6 +304,34 @@ class member_ref(member_2):
 	"""
 	pass
 
+class member_substruct(member):
+	"""
+	Member represents a substruct under the given structure.
+	"""
+	def __init__(self, offset, sub):
+		"""
+		@offset is the offset start of this structure
+		@sub is the struct class that is created at the given offset
+		"""
+		self._offset = offset
+		self._substruct_type = sub
+
+	@property
+	def offset(self):
+		"""Gets the offset that this jumptable is at"""
+		if isinstance(self._offset, int):
+			return self._offset
+		elif isinstance(self._offset, str):
+			return getattr(self.ins, self._offset_ref).val
+		else:
+			raise TypeError("Unknown type for offset: '%s'" % (str(self._offset),))
+
+	def __getattr__(self, k):
+		cls = self._substruct_type
+		fw = self.fw
+		off = self.offset
+		o = cls(fw, off)
+		return getattr(o, k)
 
 class member_str(member):
 	"""
@@ -565,6 +644,7 @@ class bstructmeta(type):
 
 		def __get__(self, ins, own=None):
 			""" Pass attribute access to the struct """
+			self._s.fw = ins.fw
 			self._s.ins = ins
 			return self._s
 
