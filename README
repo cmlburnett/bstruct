@@ -45,12 +45,19 @@ The member types supported in the library include:
 - member_2 -- 2 byte field
 - member_4 -- 4 byte field
 - member_8 -- 8 byte field
+- member_1I_array -- 1 byte integer array
+- member_2I_array -- 2 byte integer array
+- member_4I_array -- 4 byte integer array
+- member_8I_array -- 8 byte integer array
+- member_4F_array -- 4 byte float array
+- member_8F_array -- 8 byte float array
 - member_binary -- arbitrary binary data field using item indices [] access
 - member_binary_record -- arbitrary binary data field using item indices [] access assuming each record is the specified bytes long
 - member_ref -- relative offset (currently a 2 byte field)
 - member_str -- string encoded as UTF-8 can utilize member_ref or fixed integer offsets to determine start and end of the string
 - member_jumptable -- a list of 2-tuples of member_ref fields indicating the start/end of list items
 - member_list -- a list of arbitrary structs in a list
+- member_substruct -- member is a sub-struct
 
 Other member types can be defined outside of this library and used (recommend to inherit from bstruct.member).
 
@@ -62,14 +69,38 @@ Members and their arguments:
 	member_4(offset) -- same as member_1
 	member_8(offset) -- same as member_1
 	member_ref(offset) -- same as member_1
+	member_1I_array(offset) -- same as member_1 with items accessed by array index
+	member_2I_array(offset) -- same as member_1 with items accessed by array index
+	member_4I_array(offset) -- same as member_1 with items accessed by array index
+	member_8I_array(offset) -- same as member_1 with items accessed by array index
+	member_4F_array(offset) -- same as member_1 with items accessed by array index
+	member_8F_array(offset) -- same as member_1 with items accessed by array index
 	member_binary(offset) -- same as member_1
 	member_binaryrecord(offset, size) -- @size of each record (eg, [0] == (0, size), [1] == (size,size*2))
 	member_ref(offset) -- same as member_1
 	member_str(start, end) -- if @start or @end is an integer, it is a relative offset; otherwise take as a member name in which the value of that member (a member_ref) is used as the offset
 	member_jumptable(offset, len, list) -- all are names of other members. @offset is the member indicating the start offset of the jumptable/list. @len is the member indicating the number of entries. @list is the member_list.
 	member_list(item_class, jt_ref) -- @item_class is the class type for the entries (if polymorphic, supply the base struct). @jt_ref is the name of the jumptable member maanging the list.
+	member_substruct(offset, class) -- this member is a sub-struct of type @class and @offset can be either integer or field name on the parent structure for offset information
 
 Examples are probably the best way to understand how these structs are defined and used.
+
+### Simple integer types ###
+There are four integer types:
+
+	member_1
+	member_2
+	member_4
+	member_8
+
+These represent 1, 2, 4, and 8 byte integers.
+
+### Arrays ###
+Arrays are simple sequantial items of integers.
+Each member item is accessed (get and set) through item access.
+Like other members, it assumes the space is managed by the calling user and does not move or make room for items.
+Typically, the array member should also include a simple integer member to keep track of the count.
+The space taken by the array is simply the item size times the number of items (no overhead), which is beneficial over jumptables.
 
 ### Polymorphism ###
 Polymorphism is supported. In the following example, a person can be an employee or a volunteer.
@@ -163,6 +194,43 @@ Arguments to member_jumptable are the members that contain the offset start of t
 While it is not required that list items are sequential, it is entirely possible to rearrange them within the jumptable.
 If you go this route it is up to you to deal with that.
 member_jumptable.add() and member_list.add() assume the new item is sequential to the last item in the list.
+
+
+### Sub-structs ###
+A way to sub-divide a struct using other struct definitions.
+This can help logically split up a struct for any reason but can be for when only a subset of the fields are polymorphic.
+
+For example:
+
+	class names(metaclass=bstruct.bstructmeta):
+		dat = {
+			'num_names': bstruct.member_1(0),
+			'index_names': bstruct.member_ref(1),
+			'names_jumptable': bstruct.member_jumptable('index_names', 'num_names', 'names'),
+			'names': bstruct.member_list(name, 'names_jumptable'),
+		}
+		@staticmethod
+		def lenplan(names):
+			return 3 + sum([name.lenplan(_) for _ in names])
+
+	class name(metaclass=bstruct.bstructmeta):
+		dat = {
+			'first': bstruct.member_str(0, 20),
+			'last': bstruct.member_str(20, 40),
+		}
+		@staticmethod
+		def lenplan():
+			return 40
+
+	class person(metaclass=bstruct.bstructmeta):
+		dat = {
+			'names': bstruct.member_substruct(0, names),
+		}
+	class employer(metaclass=bstruct.bstructmeta):
+		dat = {
+			'employee_id': bstruct.member_4(0),
+			'names': bstruct.member_substruct(4, names),
+		}
 
 
 ### Unit Testing ###
