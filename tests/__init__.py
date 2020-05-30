@@ -1,5 +1,6 @@
 import bstruct
 import unittest
+import struct
 
 class mybytearray(bytearray):
 	"""
@@ -730,6 +731,7 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(x.arr[2], 30)
 
 		self.assertEqual(ba.hex(), '030a141e00000000000000000000000000000000')
+		self.assertEqual(ba.hex(), struct.pack("<BBBB", 3, 10,20,30).hex() + "00"*16)
 
 	def test_array_2I(self):
 		ba = mybytearray(b'\0'*20)
@@ -748,6 +750,7 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(x.arr[2], 30)
 
 		self.assertEqual(ba.hex(), '030a0014001e0000000000000000000000000000')
+		self.assertEqual(ba.hex(), struct.pack("<BHHH", 3, 10,20,30).hex() + "00"*13)
 
 	def test_array_4I(self):
 		ba = mybytearray(b'\0'*20)
@@ -766,6 +769,7 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(x.arr[2], 30)
 
 		self.assertEqual(ba.hex(), '030a000000140000001e00000000000000000000')
+		self.assertEqual(ba.hex(), struct.pack("<BIII", 3, 10,20,30).hex() + "00"*7)
 
 	def test_array_8I(self):
 		ba = mybytearray(b'\0'*20)
@@ -784,6 +788,7 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(x.arr[2], 30)
 
 		self.assertEqual(ba.hex(), '030a0000000000000014000000000000001e00000000000000')
+		self.assertEqual(ba.hex(), struct.pack("<BQQQ", 3, 10,20,30).hex())
 
 	def test_array_4F(self):
 		ba = mybytearray(b'\0'*20)
@@ -804,6 +809,7 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(x.arr[2], vals[2])
 
 		self.assertEqual(ba.hex(), '03a01ac73fc3f548402e2d2dc100000000000000')
+		self.assertEqual(ba.hex(), struct.pack("<Bfff", 3, *vals).hex() + "00"*7)
 
 	def test_array_8I(self):
 		ba = mybytearray(b'\0'*20)
@@ -824,6 +830,7 @@ class SimpleTests(unittest.TestCase):
 		self.assertEqual(x.arr[2], vals[2])
 
 		self.assertEqual(ba.hex(), '030000000054e3f83f00000060b81e0940000000c0a5a525c0')
+		self.assertEqual(ba.hex(), struct.pack("<Bddd", 3, *vals).hex())
 
 
 class intervalTests(unittest.TestCase):
